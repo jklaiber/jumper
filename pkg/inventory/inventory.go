@@ -2,7 +2,6 @@ package inventory
 
 import (
 	"errors"
-	"io/ioutil"
 
 	"gopkg.in/yaml.v2"
 )
@@ -23,26 +22,27 @@ type ChildrenGroup struct {
 }
 
 type Vars struct {
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	SshKey   string `yaml:"sshkey"`
-	Ip       string `yaml:"ip"`
+	Username string `yaml:"username,omitempty"`
+	Password string `yaml:"password,omitempty"`
+	SshKey   string `yaml:"sshkey,omitempty"`
+	Address  string `yaml:"address,omitempty"`
 }
 
-func NewInventory(filePath string) (Inventory, error) {
-	inventory := Inventory{}
-	b, err := ioutil.ReadFile(filePath)
+func NewInventory(filePath string, password string) (inventory Inventory, err error) {
+	inventory = Inventory{}
+	// str, err := ioutil.ReadFile(filePath)
+	str, err := inventory.readEncryptedFile(filePath, password)
 	if err != nil {
 		return inventory, errors.New("inventory file could not be read")
 	}
-	err = yaml.Unmarshal([]byte(b), &inventory)
+	err = yaml.Unmarshal([]byte(str), &inventory)
 	if err != nil {
 		return inventory, errors.New("inventory could not be unmarshalled")
 	}
-	return inventory, nil
+	return
 }
 
-func (inventory *Inventory) GetAccessInformation(group string, host string) (username string, password string, sshkey string, ip string, err error) {
+func (inventory *Inventory) GetAccessInformation(group string, host string) (username string, password string, sshkey string, address string, err error) {
 	username, err = inventory.GetUsername(group, host)
 	if err != nil {
 		return "", "", "", "", errors.New("username for host not found")
@@ -55,9 +55,30 @@ func (inventory *Inventory) GetAccessInformation(group string, host string) (use
 	if err != nil {
 		return "", "", "", "", errors.New("sshkey for host not found")
 	}
-	ip, err = inventory.GetIp(group, host)
+	address, err = inventory.GetAddress(group, host)
 	if err != nil {
-		return "", "", "", "", errors.New("ip for host not found")
+		return "", "", "", "", errors.New("address for host not found")
+	}
+	return
+}
+
+func (inventory *Inventory) GetUngroupedHosts() (ungroupedHosts []string) {
+	for key, _ := range inventory.All.Hosts {
+		ungroupedHosts = append(ungroupedHosts, key)
+	}
+	return
+}
+
+func (inventory *Inventory) GetGroups() (groups []string) {
+	for key, _ := range inventory.All.Children {
+		groups = append(groups, key)
+	}
+	return
+}
+
+func (inventory *Inventory) GetGroupHosts(group string) (groupHosts []string) {
+	for key, _ := range inventory.All.Children[group].Hosts {
+		groupHosts = append(groupHosts, key)
 	}
 	return
 }

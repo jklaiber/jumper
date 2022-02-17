@@ -26,6 +26,7 @@ type Vars struct {
 	Password string `yaml:"password,omitempty"`
 	SshKey   string `yaml:"sshkey,omitempty"`
 	Address  string `yaml:"address,omitempty"`
+	SshAgent bool   `yaml:"sshagent,omitempty"`
 }
 
 func NewInventory(filePath string, password string) (inventory Inventory, err error) {
@@ -42,24 +43,36 @@ func NewInventory(filePath string, password string) (inventory Inventory, err er
 	return
 }
 
-func (inventory *Inventory) GetAccessInformation(group string, host string) (username string, password string, sshkey string, address string, err error) {
+func (inventory *Inventory) GetAccessInformation(group string, host string) (username string, password string, sshkey string, ssagent bool, address string, err error) {
 	username, err = inventory.GetUsername(group, host)
 	if err != nil {
-		return "", "", "", "", errors.New("username for host not found")
+		return "", "", "", false, "", errors.New("username for host not found")
 	}
-	password, err = inventory.GetPassword(group, host)
+	password, sshkey, ssagent, err = inventory.getAccessMethod(group, host)
 	if err != nil {
-		return "", "", "", "", errors.New("password for host not found")
-	}
-	sshkey, err = inventory.GetSshKey(group, host)
-	if err != nil {
-		return "", "", "", "", errors.New("sshkey for host not found")
+		return "", "", "", false, "", errors.New("no valid access method found")
 	}
 	address, err = inventory.GetAddress(group, host)
 	if err != nil {
-		return "", "", "", "", errors.New("address for host not found")
+		return "", "", "", false, "", errors.New("address for host not found")
 	}
 	return
+}
+
+func (inventory *Inventory) getAccessMethod(group string, host string) (string, string, bool, error) {
+	password, passerr := inventory.GetPassword(group, host)
+	sshkey, sshkeyerr := inventory.GetSshKey(group, host)
+	sshagent, _ := inventory.GetSshAgent(group, host)
+	if sshagent {
+		return "", "", true, nil
+	}
+	if sshkeyerr == nil {
+		return "", sshkey, false, nil
+	}
+	if passerr == nil {
+		return password, "", false, nil
+	}
+	return "", "", false, errors.New("no valid access method found")
 }
 
 func (inventory *Inventory) GetUngroupedHosts() (ungroupedHosts []string) {

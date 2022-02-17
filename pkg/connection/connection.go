@@ -60,7 +60,7 @@ func (client *SSHClient) prepareCommand(session *ssh.Session, cmd *SSHCommand) e
 	if cmd.Stdin != nil {
 		stdin, err := session.StdinPipe()
 		if err != nil {
-			return fmt.Errorf("Unable to setup stdin for session: %v", err)
+			return fmt.Errorf("unable to setup stdin for session: %v", err)
 		}
 		go io.Copy(stdin, cmd.Stdin)
 	}
@@ -68,7 +68,7 @@ func (client *SSHClient) prepareCommand(session *ssh.Session, cmd *SSHCommand) e
 	if cmd.Stdout != nil {
 		stdout, err := session.StdoutPipe()
 		if err != nil {
-			return fmt.Errorf("Unable to setup stdout for session: %v", err)
+			return fmt.Errorf("unable to setup stdout for session: %v", err)
 		}
 		go io.Copy(cmd.Stdout, stdout)
 	}
@@ -76,7 +76,7 @@ func (client *SSHClient) prepareCommand(session *ssh.Session, cmd *SSHCommand) e
 	if cmd.Stderr != nil {
 		stderr, err := session.StderrPipe()
 		if err != nil {
-			return fmt.Errorf("Unable to setup stderr for session: %v", err)
+			return fmt.Errorf("unable to setup stderr for session: %v", err)
 		}
 		go io.Copy(cmd.Stderr, stderr)
 	}
@@ -87,16 +87,16 @@ func (client *SSHClient) prepareCommand(session *ssh.Session, cmd *SSHCommand) e
 func (client *SSHClient) newSession() (*ssh.Session, error) {
 	connection, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Host, client.Port), client.Config)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to dial: %s", err)
+		return nil, fmt.Errorf("failed to dial: %s", err)
 	}
 
 	session, err := connection.NewSession()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create session: %s", err)
+		return nil, fmt.Errorf("failed to create session: %s", err)
 	}
 
 	modes := ssh.TerminalModes{
-		// ssh.ECHO:          0,     // disable echoing
+		ssh.ECHO:          0,     // disable echoing
 		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
 		ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
 	}
@@ -129,13 +129,31 @@ func SSHAgent() ssh.AuthMethod {
 	return nil
 }
 
-func NewConnection(username string, host string, password string) error {
+func NewConnection(username string, host string, password string, sshkey string, sshagent bool) error {
 	sshConfig := &ssh.ClientConfig{
 		User: username,
 		Auth: []ssh.AuthMethod{
 			ssh.Password(password),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+	if sshkey != "" {
+		sshConfig = &ssh.ClientConfig{
+			User: username,
+			Auth: []ssh.AuthMethod{
+				PublicKeyFile(sshkey),
+			},
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		}
+	}
+	if sshagent {
+		sshConfig = &ssh.ClientConfig{
+			User: username,
+			Auth: []ssh.AuthMethod{
+				SSHAgent(),
+			},
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		}
 	}
 
 	client := &SSHClient{

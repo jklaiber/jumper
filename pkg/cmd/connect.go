@@ -36,12 +36,12 @@ var connectCmd = &cobra.Command{
 	Long:  `A longer description that spans multiple lines an.`,
 	Args:  cobra.ExactValidArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		user, pass, _, addr, err := inv.GetAccessInformation(Group, args[0])
+		user, pass, sshkey, sshagent, addr, err := inv.GetAccessInformation(Group, args[0])
 		if err != nil {
-			log.Fatalf("could not get access credentials")
+			log.Fatal(err)
 		}
 
-		err = connection.NewConnection(user, addr, pass)
+		err = connection.NewConnection(user, addr, pass, sshkey, sshagent)
 		if err != nil {
 			log.Fatal(err)
 		}

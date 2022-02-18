@@ -1,7 +1,6 @@
-# graSSHopper
-> **Beware:** This project is still under active development
+![jumper logo](doc/jumper_logo.png)
 
-graSSHopper is a simple and fast cli ssh manager. The goal was to reuse some ideas like the Ansible YAML inventory and Ansible Vault.
+Jumper is a simple and fast cli ssh manager. The goal was to reuse some ideas like the Ansible YAML inventory and Ansible Vault.
 
 ## Installation
 

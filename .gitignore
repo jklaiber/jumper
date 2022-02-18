@@ -5,12 +5,14 @@
 *.so
 *.dylib
 
-# Test binary, built with `go test -c`
+# Test exclusions
 *.test
 
-# Output of the go coverage tool, specifically when used with LiteIDE
+# Build exclusion
 *.out
 out
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Project specific exclusion
+inventory.yaml
+secure_inventory.yaml
+bash_completion

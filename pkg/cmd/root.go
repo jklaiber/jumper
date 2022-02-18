@@ -19,7 +19,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/jklaiber/grasshopper/pkg/inventory"
+	"github.com/jklaiber/jumper/pkg/inventory"
 	"github.com/spf13/cobra"
 
 	"github.com/spf13/viper"
@@ -29,7 +29,7 @@ var cfgFile string
 var inv inventory.Inventory
 
 var rootCmd = &cobra.Command{
-	Use:   "grasshopper",
+	Use:   "jumper",
 	Short: "A simple cli SSH manager",
 }
 
@@ -41,7 +41,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	cobra.OnInitialize(initInventory)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.grasshopper.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jumper.yaml)")
 
 }
 
@@ -65,7 +65,7 @@ func initConfig() {
 
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".grasshopper")
+		viper.SetConfigName(".jumper")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match

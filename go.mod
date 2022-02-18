@@ -1,4 +1,4 @@
-module github.com/jklaiber/grasshopper
+module github.com/jklaiber/jumper
 
 go 1.16
 

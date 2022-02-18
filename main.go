@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/jklaiber/grasshopper/pkg/cmd"
+import "github.com/jklaiber/jumper/pkg/cmd"
 
 func main() {
 	cmd.Execute()

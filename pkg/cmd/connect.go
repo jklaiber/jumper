@@ -18,7 +18,7 @@ package cmd
 import (
 	"log"
 
-	"github.com/jklaiber/grasshopper/pkg/connection"
+	"github.com/jklaiber/jumper/pkg/connection"
 	"github.com/spf13/cobra"
 )
 

@@ -9,11 +9,11 @@ The tool can be used straightforward to connect over ssh to the saved hosts in t
   
 Connect for example to an ungrouped host:
 ```
-$ grasshopper connect ungroupedhost1
+$ jumper connect ungroupedhost1
 ```
 Or to a host which belongs to a group:
 ```
-$ grasshopper connect -g webservers webserver1
+$ jumper connect -g webservers webserver1
 ```
 
 ## Configuration
@@ -24,11 +24,11 @@ In order to use the autocompletion feature you have to generate the autocompleti
   
 Example for bash:
 ```
-$ grasshopper completion bash >> grasshopper_completion
+$ jumper completion bash >> jumper_completion
 ```
 You can then source the completion file into your actual session (only available until you close the session) or reference it, for example in your `.bashrc` file. 
 ```
-$ source grasshopper_completion
+$ source jumper_completion
 ```
 
 ## Inventory

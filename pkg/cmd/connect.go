@@ -33,7 +33,6 @@ var Group string
 var connectCmd = &cobra.Command{
 	Use:   "connect",
 	Short: "Connect to a saved connection",
-	Long:  `A longer description that spans multiple lines an.`,
 	Args:  cobra.ExactValidArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		user, pass, sshkey, sshagent, addr, err := inv.GetAccessInformation(Group, args[0])

@@ -22,14 +22,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	groupFlagName        = "group"
-	groupFlagNameShort   = "g"
-	groupFlagDescription = "Connect to a host in a group"
-)
-
-var Group string
-
 var connectCmd = &cobra.Command{
 	Use:   "connect",
 	Short: "Connect to a saved connection",
@@ -48,19 +40,20 @@ var connectCmd = &cobra.Command{
 	ValidArgsFunction: UngroupedHostGet,
 }
 
-func UngroupedHostGet(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if Group == "" {
-		return inv.GetUngroupedHosts(), cobra.ShellCompDirectiveNoFileComp
-	}
-	return inv.GetGroupHosts(Group), cobra.ShellCompDirectiveNoFileComp
-}
+// func UngroupedHostGet(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+// 	if Group == "" {
+// 		return inv.GetUngroupedHosts(), cobra.ShellCompDirectiveNoFileComp
+// 	}
+// 	return inv.GetGroupHosts(Group), cobra.ShellCompDirectiveNoFileComp
+// }
 
 func init() {
 	rootCmd.AddCommand(connectCmd)
 
-	connectCmd.Flags().StringVarP(&Group, groupFlagName, groupFlagNameShort, "", groupFlagDescription)
-	connectCmd.RegisterFlagCompletionFunc(groupFlagName, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	connectCmd.Flags().StringVarP(&Group, GroupFlagName, GroupFlagNameShort, "", GroupFlagDescription)
+	connectCmd.RegisterFlagCompletionFunc(GroupFlagName, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return inv.GetGroups(), cobra.ShellCompDirectiveDefault
 	})
+	connectCmd.MarkFlagRequired(GroupFlagName)
 
 }

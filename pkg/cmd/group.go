@@ -22,7 +22,7 @@ import (
 var groupCmd = &cobra.Command{
 	Use:   "group",
 	Short: "edit groups and its configuration",
-	Args:  cobra.ExactValidArgs(1),
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 	},
 }

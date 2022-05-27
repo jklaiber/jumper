@@ -54,6 +54,5 @@ func init() {
 	connectCmd.RegisterFlagCompletionFunc(GroupFlagName, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return inv.GetGroups(), cobra.ShellCompDirectiveDefault
 	})
-	connectCmd.MarkFlagRequired(GroupFlagName)
 
 }

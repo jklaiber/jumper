@@ -7,7 +7,7 @@ import (
 const (
 	GroupFlagName             = "group"
 	GroupFlagNameShort        = "g"
-	GroupFlagDescription      = "Connect to a host in a group"
+	GroupFlagDescription      = "connect to a host in a group"
 	NameFlagName              = "name"
 	NameFlagNameShort         = "n"
 	ConnectionFlagName        = "connection"

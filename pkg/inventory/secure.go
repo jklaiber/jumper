@@ -13,3 +13,11 @@ func (inventory *Inventory) readEncryptedFile(filePath string, password string) 
 	}
 	return
 }
+
+func (inventory *Inventory) writeEncryptedFile(filePath string, password string, invToWrite []byte) (err error) {
+	err = vault.EncryptFile(filePath, string(invToWrite), password)
+	if err != nil {
+		return errors.New("file could not be encrypted")
+	}
+	return
+}

@@ -43,6 +43,18 @@ func NewInventory(filePath string, password string) (inventory Inventory, err er
 	return
 }
 
+func (inventory *Inventory) WriteInventory(filepath string, password string) (err error) {
+	invToWrite, err := yaml.Marshal(&inventory)
+	if err != nil {
+		return errors.New("inventory could not be marshalled")
+	}
+	err = inventory.writeEncryptedFile(filepath, password, invToWrite)
+	if err != nil {
+		return errors.New("inventory could not be written")
+	}
+	return
+}
+
 func (inventory *Inventory) GetAccessInformation(group string, host string) (username string, password string, sshkey string, ssagent bool, address string, err error) {
 	username, err = inventory.GetUsername(group, host)
 	if err != nil {

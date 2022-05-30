@@ -6,7 +6,7 @@ Jumper is a simple and fast cli ssh manager. The goal was to reuse some ideas li
 
 You can use the following command to install Jumper to your system:
 ```
-$ sh -c "$(curl -fsSL https://raw.githubusercontent.com/jklaiber/jumper/main/install/install.sh)"
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/jklaiber/jumper/main/install/install.sh)"
 ```
 
 ## Usage

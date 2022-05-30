@@ -4,8 +4,13 @@ Jumper is a simple and fast cli ssh manager. The goal was to reuse some ideas li
 
 ## Installation
 
+You can use the following command to install Jumper to your system:
+```
+$ sh -c "$(curl -fsSL https://raw.githubusercontent.com/jklaiber/jumper/main/install/install.sh)"
+```
+
 ## Usage
-The tool can be used straightforward to connect over ssh to the saved hosts in the inventory.   
+The tool can be used to connect over ssh to the saved hosts in the inventory.   
   
 Connect for example to an ungrouped host:
 ```
@@ -17,7 +22,6 @@ $ jumper connect -g webservers webserver1
 ```
 
 ## Configuration
-
 
 ### Autocompletion
 In order to use the autocompletion feature you have to generate the autocompletion file for your specific shell.  

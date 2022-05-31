@@ -180,7 +180,17 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-printf "  %s\n" "${UNDERLINE}Configuration${NO_COLOR}"
+printf "
+    _                                 
+   (_)                                
+    _ _   _ _ __ ___  _ __   ___ _ __ 
+   | | | | |  _   _ \|  _ \ / _ \  __|
+   | | |_| | | | | | | |_) |  __/ |   
+   | |\__ _|_| |_| |_|  __/ \___|_|   
+  _/ |               | |              
+ |__/                |_|              
+"
+printf "\n  %s\n" "${UNDERLINE}Configuration${NO_COLOR}"
 info "${BOLD}Configuration directory${NO_COLOR}: ${GREEN}${CONFIGURATION_DIR}${NO_COLOR}"
 
 # non-empty VERBOSE enables verbose untarring

@@ -20,6 +20,11 @@ Or to a host which belongs to a group:
 ```
 $ jumper connect -g webservers webserver1
 ```
+Edit the inventory directly with jumper or with ansible-vault:
+```
+$ jumper edit inventory
+$ ansible-vault edit .jumper.inventory.yaml
+```
 
 ## Configuration
 
@@ -28,12 +33,9 @@ In order to use the autocompletion feature you have to generate the autocompleti
   
 Example for bash:
 ```
-$ jumper completion bash >> jumper_completion
+$ source <(jumper completion bash)
 ```
-You can then source the completion file into your actual session (only available until you close the session) or reference it, for example in your `.bashrc` file. 
-```
-$ source jumper_completion
-```
+You can add this command to your `.bashrc`.
 
 ## Inventory
 The inventory is completely inspired by the Yaml Ansible inventory (more [here]()).  

@@ -67,6 +67,28 @@ confirm() {
   fi
 }
 
+detect_platform() {
+  if has uname; then
+    PLATFORM="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  elif has os; then
+    PLATFORM="$(os | tr '[:upper:]' '[:lower:]')"
+  else
+    error 'Unable to detect platform'
+    exit 1
+  fi
+}
+
+detect_arch() {
+  if has uname; then
+    ARCH="$(uname -m | tr '[:upper:]' '[:lower:]')"
+  elif has arch; then
+    ARCH="$(arch | tr '[:upper:]' '[:lower:]')"
+  else
+    error 'Unable to detect architecture'
+    exit 1
+  fi
+}
+
 
 create_configuration() {
   local path="$CONFIGURATION_DIR/.jumper.yaml"
@@ -119,12 +141,23 @@ EOF
   fi
 }
 
+remove_old_binary() {
+  local path="${HOME}/.local/bin/jumper"
+  if test -f ${path}
+  then
+    info "Removing old jumper binary..."
+    rm ${path}
+    completed "Old jumper binary is removed"
+  fi
+}
+
 install_binary () {
   info "Install jumper binary..."
   printf '\n'
 
   $(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/jklaiber/jumper/releases \
   | grep "browser_download_url" \
+  | grep "$PLATFORM-$ARCH.tar.gz" \
   | head -n 1 \
   | cut -d : -f 2,3 \
   | tr -d \" \
@@ -192,6 +225,10 @@ printf "
 "
 printf "\n  %s\n" "${UNDERLINE}Configuration${NO_COLOR}"
 info "${BOLD}Configuration directory${NO_COLOR}: ${GREEN}${CONFIGURATION_DIR}${NO_COLOR}"
+detect_platform
+detect_arch
+info "${BOLD}Detected platform${NO_COLOR}: ${GREEN}${PLATFORM}${NO_COLOR}"
+info "${BOLD}Detected architecture${NO_COLOR}: ${GREEN}${ARCH}${NO_COLOR}"
 
 # non-empty VERBOSE enables verbose untarring
 if [ -n "${VERBOSE-}" ]; then
@@ -203,10 +240,19 @@ fi
 
 printf '\n'
 
+
 confirm "Install Jumper SSH CLI Manager?"
-install
-printf '\n'
-completed "Jumper installed"
+if has jumper; then
+  info "Jumper is already installed, upgrading..."
+  remove_old_binary
+  install_binary
+  printf '\n'
+  completed "Jumper is upgraded"
+else
+  install
+  printf '\n'
+  completed "Jumper is installed"
+fi
 
 URL="https://github.com/jklaiber/jumper"
 
@@ -216,6 +262,8 @@ info "Please follow the steps to use Jumper on your machine:
   You can edit the configuration file ${BOLD}${CONFIGURATION_DIR}/.jumper.yaml${NO_COLOR} default is:
       inventory_file: ${HOME}/.jumper.inventory.yaml
       vault_password:
+  ${BOLD}${UNDERLINE}Inventory${NO_COLOR}
+  Please encrypt the inventory file under ${BOLD}${CONFIGURATION_DIR}/.jumper.inventory.yaml${NO_COLOR} with: ansible-vault encrypt ${CONFIGURATION_DIR}/.jumper.inventory.yaml
   ${BOLD}${UNDERLINE}Documentation${NO_COLOR}
   To check out the documentation go to:
       ${UNDERLINE}${BLUE}${URL}${NO_COLOR}

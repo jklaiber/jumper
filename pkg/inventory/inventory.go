@@ -43,18 +43,18 @@ func NewInventory(filePath string, password string) (inventory Inventory, err er
 	return
 }
 
-func (inventory *Inventory) GetAccessInformation(group string, host string) (username string, password string, sshkey string, ssagent bool, address string, err error) {
+func (inventory *Inventory) GetAccessInformation(group string, host string) (username string, password string, sshkey string, sshagent bool, address string, err error) {
 	username, err = inventory.GetUsername(group, host)
 	if err != nil {
 		return "", "", "", false, "", errors.New("username for host not found")
 	}
-	password, sshkey, ssagent, err = inventory.getAccessMethod(group, host)
+	password, sshkey, sshagent, err = inventory.getAccessMethod(group, host)
 	if err != nil {
 		return "", "", "", false, "", errors.New("no valid access method found")
 	}
 	address, err = inventory.GetAddress(group, host)
 	if err != nil {
-		return "", "", "", false, "", errors.New("address for host not found")
+		return username, password, sshkey, sshagent, host, nil
 	}
 	return
 }

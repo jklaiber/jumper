@@ -87,6 +87,9 @@ detect_arch() {
     error 'Unable to detect architecture'
     exit 1
   fi
+  if ARCH == 'x86_64'; then
+    ARCH='amd64'
+  fi
 }
 
 

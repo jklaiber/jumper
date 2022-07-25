@@ -30,7 +30,12 @@ func (inventory *Inventory) GetPassword(group string, host string) (string, erro
 }
 
 func (inventory *Inventory) getGlobalPassword() (string, error) {
-	password := inventory.All.Vars.Password
+	password := ""
+	if inventory.All.Vars.Password != "" {
+		password = inventory.All.Vars.Password
+	} else {
+		password = inventory.All.Vars.AnsibleSshPASS
+	}
 	if password == "" {
 		return "", errors.New("global password does not exist")
 	}
@@ -38,7 +43,12 @@ func (inventory *Inventory) getGlobalPassword() (string, error) {
 }
 
 func (inventory *Inventory) getGroupPassword(group string) (string, error) {
-	password := inventory.All.Children[group].Vars.Password
+	password := ""
+	if inventory.All.Children[group].Vars.Password != "" {
+		password = inventory.All.Children[group].Vars.Password
+	} else {
+		password = inventory.All.Children[group].Vars.AnsibleSshPASS
+	}
 	if password == "" {
 		return "", errors.New("group password does not exist")
 	}
@@ -46,7 +56,12 @@ func (inventory *Inventory) getGroupPassword(group string) (string, error) {
 }
 
 func (inventory *Inventory) getGroupHostPassword(group string, host string) (string, error) {
-	password := inventory.All.Children[group].Hosts[host].Password
+	password := ""
+	if inventory.All.Children[group].Hosts[host].Password != "" {
+		password = inventory.All.Children[group].Hosts[host].Password
+	} else {
+		password = inventory.All.Children[group].Hosts[host].AnsibleSshPASS
+	}
 	if password == "" {
 		return "", errors.New("host password does not exist")
 	}
@@ -54,7 +69,12 @@ func (inventory *Inventory) getGroupHostPassword(group string, host string) (str
 }
 
 func (inventory *Inventory) getUngroupedHostPassword(host string) (string, error) {
-	password := inventory.All.Hosts[host].Password
+	password := ""
+	if inventory.All.Hosts[host].Password != "" {
+		password = inventory.All.Hosts[host].Password
+	} else {
+		password = inventory.All.Hosts[host].AnsibleSshPASS
+	}
 	if password == "" {
 		return "", errors.New("host password does not exist")
 	}

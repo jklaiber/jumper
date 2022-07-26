@@ -40,6 +40,11 @@ You can add this command to your `.bashrc`.
 ## Inventory
 The inventory is completely inspired by the Yaml Ansible inventory (more [here]()).  
   
+The following variables mean the same:
+* ansible_user = username
+* ansible_ssh_pass = password
+* ansible_host = address
+  
 The basic structure is as follows:
 ```yaml
 all:

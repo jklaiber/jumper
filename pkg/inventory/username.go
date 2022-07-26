@@ -30,7 +30,12 @@ func (inventory *Inventory) GetUsername(group string, host string) (string, erro
 }
 
 func (inventory *Inventory) getGlobalUsername() (string, error) {
-	username := inventory.All.Vars.Username
+	username := ""
+	if inventory.All.Vars.Username != "" {
+		username = inventory.All.Vars.Username
+	} else {
+		username = inventory.All.Vars.AnsibleUser
+	}
 	if username == "" {
 		return "", errors.New("global username does not exist")
 	}
@@ -39,6 +44,11 @@ func (inventory *Inventory) getGlobalUsername() (string, error) {
 
 func (inventory *Inventory) getGroupUsername(group string) (string, error) {
 	username := inventory.All.Children[group].Vars.Username
+	if inventory.All.Children[group].Vars.Username != "" {
+		username = inventory.All.Children[group].Vars.Username
+	} else {
+		username = inventory.All.Children[group].Vars.AnsibleUser
+	}
 	if username == "" {
 		return "", errors.New("group username does not exist")
 	}
@@ -46,7 +56,12 @@ func (inventory *Inventory) getGroupUsername(group string) (string, error) {
 }
 
 func (inventory *Inventory) getGroupHostUsername(group string, host string) (string, error) {
-	username := inventory.All.Children[group].Hosts[host].Username
+	username := ""
+	if inventory.All.Children[group].Hosts[host].Username != "" {
+		username = inventory.All.Children[group].Hosts[host].Username
+	} else {
+		username = inventory.All.Children[group].Hosts[host].AnsibleUser
+	}
 	if username == "" {
 		return "", errors.New("host username does not exist")
 	}
@@ -54,7 +69,12 @@ func (inventory *Inventory) getGroupHostUsername(group string, host string) (str
 }
 
 func (inventory *Inventory) getUngroupedHostUsername(host string) (string, error) {
-	username := inventory.All.Hosts[host].Username
+	username := ""
+	if inventory.All.Hosts[host].Username != "" {
+		username = inventory.All.Hosts[host].Username
+	} else {
+		username = inventory.All.Hosts[host].AnsibleUser
+	}
 	if username == "" {
 		return "", errors.New("host username does not exist")
 	}

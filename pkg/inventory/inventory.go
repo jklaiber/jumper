@@ -22,11 +22,14 @@ type ChildrenGroup struct {
 }
 
 type Vars struct {
-	Username string `yaml:"username,omitempty"`
-	Password string `yaml:"password,omitempty"`
-	SshKey   string `yaml:"sshkey,omitempty"`
-	Address  string `yaml:"address,omitempty"`
-	SshAgent bool   `yaml:"sshagent,omitempty"`
+	Username       string `yaml:"username,omitempty"`
+	AnsibleUser    string `yaml:"ansible_user,omitempty"`
+	Password       string `yaml:"password,omitempty"`
+	AnsibleSshPASS string `yaml:"ansible_ssh_pass,omitempty"`
+	SshKey         string `yaml:"sshkey,omitempty"`
+	Address        string `yaml:"address,omitempty"`
+	AnsibleHost    string `yaml:"ansible_host,omitempty"`
+	SshAgent       bool   `yaml:"sshagent,omitempty"`
 }
 
 func NewInventory(filePath string, password string) (inventory Inventory, err error) {

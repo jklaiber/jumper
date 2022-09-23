@@ -29,6 +29,16 @@ BLUE="$(tput setaf 4 2>/dev/null || printf '')"
 MAGENTA="$(tput setaf 5 2>/dev/null || printf '')"
 NO_COLOR="$(tput sgr0 2>/dev/null || printf '')"
 
+help() {
+   echo "Script to install jumper (a simple cli ssh manager)"
+   echo
+   echo "Syntax: install.sh [-h|f]"
+   echo "options:"
+   echo "-h               Print this Help."
+   echo "-f               Force install."
+   echo
+}
+
 info() {
   printf '%s\n' "${BOLD}${GREY}>${NO_COLOR} $*"
 }

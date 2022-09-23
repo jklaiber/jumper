@@ -92,58 +92,6 @@ detect_arch() {
   fi
 }
 
-
-create_configuration() {
-  local path="$CONFIGURATION_DIR/.jumper.yaml"
-  info "Create initial configuration file..."
-  if test -f ${path}
-  then
-    info "Configuration already exists, skipping..."
-  else
-    bash -c "cat > "${path}"" << EOF
-inventory_file: $CONFIGURATION_DIR/.jumper.inventory.yaml
-vault_password: 
-EOF
-    completed "Configuration $path is generated"
-  fi
-  local path="$CONFIGURATION_DIR/.jumper.inventory.yaml"
-  info "Create example inventory file..."
-  if test -f ${path}
-  then
-    info "Inventory already exists, skipping..."
-  else
-    bash -c "cat > "${path}"" << EOF
-all:
-  hosts:
-    foo.example.com:
-    bar.example.com:
-  children:
-    webservers:
-      hosts:
-        foo.example.com:
-          username: userfoo
-          password: passfoo
-        bar.example.com:
-          username: userfoo
-          password: passfoo
-        foobar.example.com:
-          password: passfoo
-    dbservers:
-      hosts:
-        one.example.com:
-        two.example.com:
-        three.example.com:
-      vars:
-        username: userfoo
-        password: passfoo
-  vars:
-    sshkey: ${HOME}/.ssh/id_rsa
-    username: globalusername
-EOF
-    completed "Example inventory $path is generated"
-  fi
-}
-
 remove_old_binary() {
   local path="${HOME}/.local/bin/jumper"
   if test -f ${path}
@@ -175,99 +123,69 @@ install_binary () {
 install() {
   printf '\n'
   install_binary
-  create_configuration
 }
 
-if [ -z "${CONFIGURATION_DIR-}" ]; then
-  CONFIGURATION_DIR=${HOME}
-fi
+print_banner() {
+  printf '%s\n' \
+  '    _                                 '\
+  '   (_)                                '\
+  '    _ _   _ _ __ ___  _ __   ___ _ __ '\
+  '   | | | | |  _   _ \|  _ \ / _ \  __|'\
+  '   | | |_| | | | | | | |_) |  __/ |   '\
+  '   | |\__ _|_| |_| |_|  __/ \___|_|   '\
+  '  _/ |               | |              '\
+  ' |__/                |_|              '
+  printf '\n'
+}
 
-# parse argv variables
-while [ "$#" -gt 0 ]; do
-  case "$1" in
-  -c | --configuration-dir)
-    CONFIGURATION_DIR="$2"
-    shift 2
-    ;;
-  -V | --verbose)
-    VERBOSE=1
-    shift 1
-    ;;
-  -f | -y | --force | --yes)
-    FORCE=1
-    shift 1
-    ;;
-  -c=* | --configuration-dir=*)
-    CONFIGURATION_DIR="${1#*=}"
-    shift 1
-    ;;
-  -V=* | --verbose=*)
-    VERBOSE="${1#*=}"
-    shift 1
-    ;;
-  -f=* | -y=* | --force=* | --yes=*)
-    FORCE="${1#*=}"
-    shift 1
-    ;;
-  *)
-    error "Unknown option: $1"
-    exit 1
-    ;;
+start_message() {
+  detect_platform
+  detect_arch
+  info "${BOLD}Detected platform${NO_COLOR}: ${GREEN}${PLATFORM}${NO_COLOR}"
+  info "${BOLD}Detected architecture${NO_COLOR}: ${GREEN}${ARCH}${NO_COLOR}"
+  printf '\n'
+  confirm "Install Jumper SSH CLI Manager?"
+  if has jumper; then
+    info "Jumper is already installed, upgrading..."
+    remove_old_binary
+    install_binary
+    printf '\n'
+    completed "Jumper is upgraded"
+  else
+    install
+    printf '\n'
+    completed "Jumper is installed"
+  fi
+}
+
+finish_message() {
+  URL="https://github.com/jklaiber/jumper"
+
+  printf '\n'
+  info "Please follow the steps to use Jumper on your machine:
+    ${BOLD}${UNDERLINE}Setup${NO_COLOR}
+    Jumper will force to setup the application before the first use.
+    Please follow the instructions to setup the application.
+    ${BOLD}${UNDERLINE}Documentation${NO_COLOR}
+    To check out the documentation go to:
+        ${UNDERLINE}${BLUE}${URL}${NO_COLOR}
+  "
+}
+
+while getopts "hf" option; do
+  case $option in
+    h)
+      help
+      exit;;
+    f)
+      FORCE=1
+      ;;
+    ?)
+      error "Invalid option: -$OPTARG"
+      exit;;
   esac
 done
 
-printf "
-    _                                 
-   (_)                                
-    _ _   _ _ __ ___  _ __   ___ _ __ 
-   | | | | |  _   _ \|  _ \ / _ \  __|
-   | | |_| | | | | | | |_) |  __/ |   
-   | |\__ _|_| |_| |_|  __/ \___|_|   
-  _/ |               | |              
- |__/                |_|              
-"
-printf "\n  %s\n" "${UNDERLINE}Configuration${NO_COLOR}"
-info "${BOLD}Configuration directory${NO_COLOR}: ${GREEN}${CONFIGURATION_DIR}${NO_COLOR}"
-detect_platform
-detect_arch
-info "${BOLD}Detected platform${NO_COLOR}: ${GREEN}${PLATFORM}${NO_COLOR}"
-info "${BOLD}Detected architecture${NO_COLOR}: ${GREEN}${ARCH}${NO_COLOR}"
-
-# non-empty VERBOSE enables verbose untarring
-if [ -n "${VERBOSE-}" ]; then
-  VERBOSE=v
-  info "${BOLD}Verbose${NO_COLOR}: yes"
-else
-  VERBOSE=
-fi
-
-printf '\n'
-
-
-confirm "Install Jumper SSH CLI Manager?"
-if has jumper; then
-  info "Jumper is already installed, upgrading..."
-  remove_old_binary
-  install_binary
-  printf '\n'
-  completed "Jumper is upgraded"
-else
-  install
-  printf '\n'
-  completed "Jumper is installed"
-fi
-
-URL="https://github.com/jklaiber/jumper"
-
-printf '\n'
-info "Please follow the steps to use Jumper on your machine:
-  ${BOLD}${UNDERLINE}Create configuration${NO_COLOR}
-  You can edit the configuration file ${BOLD}${CONFIGURATION_DIR}/.jumper.yaml${NO_COLOR} default is:
-      inventory_file: ${HOME}/.jumper.inventory.yaml
-      vault_password:
-  ${BOLD}${UNDERLINE}Inventory${NO_COLOR}
-  Please encrypt the inventory file under ${BOLD}${CONFIGURATION_DIR}/.jumper.inventory.yaml${NO_COLOR} with: ansible-vault encrypt ${CONFIGURATION_DIR}/.jumper.inventory.yaml
-  ${BOLD}${UNDERLINE}Documentation${NO_COLOR}
-  To check out the documentation go to:
-      ${UNDERLINE}${BLUE}${URL}${NO_COLOR}
-"
+print_banner
+start_message
+finish_message

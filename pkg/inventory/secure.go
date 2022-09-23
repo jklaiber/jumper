@@ -3,11 +3,15 @@ package inventory
 import (
 	"errors"
 
+	"github.com/jklaiber/jumper/pkg/common"
+
 	vault "github.com/sosedoff/ansible-vault-go"
 )
 
-func (inventory *Inventory) readEncryptedFile(filePath string, password string) (str string, err error) {
-	str, err = vault.DecryptFile(filePath, password)
+const service = "jumper"
+
+func (inventory *Inventory) readEncryptedFile(filePath string) (str string, err error) {
+	str, err = vault.DecryptFile(filePath, common.GetSecretFromKeyring())
 	if err != nil {
 		return "", errors.New("file could not be decrypted")
 	}

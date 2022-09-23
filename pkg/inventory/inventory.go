@@ -32,10 +32,10 @@ type Vars struct {
 	SshAgent       bool   `yaml:"sshagent,omitempty"`
 }
 
-func NewInventory(filePath string, password string) (inventory Inventory, err error) {
+func NewInventory(filePath string) (inventory Inventory, err error) {
 	inventory = Inventory{}
 	// str, err := ioutil.ReadFile(filePath)
-	str, err := inventory.readEncryptedFile(filePath, password)
+	str, err := inventory.readEncryptedFile(filePath)
 	if err != nil {
 		return inventory, errors.New("inventory file could not be read")
 	}

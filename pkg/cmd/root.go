@@ -17,15 +17,15 @@ package cmd
 
 import (
 	"log"
-	"os"
 
+	"github.com/jklaiber/jumper/pkg/common"
 	"github.com/jklaiber/jumper/pkg/inventory"
+	"github.com/jklaiber/jumper/pkg/setup"
 	"github.com/spf13/cobra"
 
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
 var inv inventory.Inventory
 
 var rootCmd = &cobra.Command{
@@ -38,40 +38,18 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	if !common.IsConfigured() {
+		setup.Setup()
+	}
+	cobra.OnInitialize(common.InitConfig)
 	cobra.OnInitialize(initInventory)
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jumper.yaml)")
-
 }
 
 func initInventory() {
 	inventoryFile := viper.GetString("inventory_file")
-	inventoryPassword := viper.GetString("vault_password")
-	inventory, err := inventory.NewInventory(inventoryFile, inventoryPassword)
+	inventory, err := inventory.NewInventory(inventoryFile)
 	if err != nil {
 		log.Fatalf("could not create inventory")
 	}
 	inv = inventory
-}
-
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
-
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(".jumper")
-	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("could not read config file")
-	}
 }

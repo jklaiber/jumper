@@ -6,11 +6,12 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/jklaiber/jumper/pkg/common"
 	vault "github.com/sosedoff/ansible-vault-go"
 )
 
 func (inventory *Inventory) EditInventory(filePath string, password string) (err error) {
-	result, err := vault.DecryptFile(filePath, password)
+	result, err := vault.DecryptFile(filePath, common.GetSecretFromKeyring())
 	if err != nil {
 		return errors.New("file could not be decrypted")
 	}
@@ -44,7 +45,7 @@ func (inventory *Inventory) EditInventory(filePath string, password string) (err
 	if err != nil {
 		return err
 	}
-	err = vault.EncryptFile(filePath, string(unencryptedContents), password)
+	err = vault.EncryptFile(filePath, string(unencryptedContents), common.GetSecretFromKeyring())
 	if err != nil {
 		return errors.New("could not encrypt temporary file")
 	}

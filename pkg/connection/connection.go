@@ -15,17 +15,17 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-func PublicKeyFile(file string) ssh.AuthMethod {
+func PublicKeyFile(file string) (ssh.AuthMethod, error) {
 	buffer, err := ioutil.ReadFile(file)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("Error during reading of private key; %v", err)
 	}
 
 	key, err := ssh.ParsePrivateKey(buffer)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("Error during parsing of pivate key; %v", err)
 	}
-	return ssh.PublicKeys(key)
+	return ssh.PublicKeys(key), nil
 }
 
 func SSHAgent() ssh.AuthMethod {
@@ -44,10 +44,14 @@ func NewConnection(username string, host string, password string, sshkey string,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	if sshkey != "" {
+		authMethod, err := PublicKeyFile(sshkey)
+		if err != nil {
+			return fmt.Errorf("Could not read ssh key: %v", err)
+		}
 		sshConfig = &ssh.ClientConfig{
 			User: username,
 			Auth: []ssh.AuthMethod{
-				PublicKeyFile(sshkey),
+				authMethod,
 			},
 			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		}
@@ -86,7 +90,7 @@ func NewConnection(username string, host string, password string, sshkey string,
 func runShell(ctx context.Context, host string, sshConfig *ssh.ClientConfig) error {
 	conn, err := ssh.Dial("tcp", host+":22", sshConfig)
 	if err != nil {
-		log.Fatalf("error")
+		log.Fatalf("error: %s", err)
 	}
 	defer conn.Close()
 

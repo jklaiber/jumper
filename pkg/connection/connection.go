@@ -15,15 +15,44 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+func readSSHKeyPassphrase(file string) ([]byte, error) {
+	fmt.Printf("Enter passphrase for key '%s':", file)
+	passphrase, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Println()
+
+	if err != nil {
+		fmt.Printf("Error reading passphrase: %v\n", err)
+		return nil, err
+	}
+
+	return passphrase, nil
+}
+
+func parsePrivateKeyWithPassphrase(file string, buffer []byte) (ssh.AuthMethod, error) {
+	passphrase, err := readSSHKeyPassphrase(file)
+	if err != nil {
+		fmt.Errorf("Error reading the passphrase: %s", err)
+		return nil, err
+	}
+	key, err := ssh.ParsePrivateKeyWithPassphrase(buffer, passphrase)
+	if err != nil {
+		return nil, fmt.Errorf("Error during parsing of pivate key; %v", err)
+	}
+	return ssh.PublicKeys(key), nil
+}
+
 func PublicKeyFile(file string) (ssh.AuthMethod, error) {
 	buffer, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("Error during reading of private key; %v", err)
 	}
-
 	key, err := ssh.ParsePrivateKey(buffer)
 	if err != nil {
-		return nil, fmt.Errorf("Error during parsing of pivate key; %v", err)
+		if _, ok := err.(*ssh.PassphraseMissingError); ok {
+			return parsePrivateKeyWithPassphrase(file, buffer)
+		} else {
+			return nil, fmt.Errorf("Error during parsing of pivate key; %v", err)
+		}
 	}
 	return ssh.PublicKeys(key), nil
 }
@@ -44,14 +73,14 @@ func NewConnection(username string, host string, password string, sshkey string,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	if sshkey != "" {
-		authMethod, err := PublicKeyFile(sshkey)
+		parsedKey, err := PublicKeyFile(sshkey)
 		if err != nil {
 			return fmt.Errorf("Could not read ssh key: %v", err)
 		}
 		sshConfig = &ssh.ClientConfig{
 			User: username,
 			Auth: []ssh.AuthMethod{
-				authMethod,
+				parsedKey,
 			},
 			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		}

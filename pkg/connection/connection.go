@@ -66,12 +66,16 @@ func SSHAgent() ssh.AuthMethod {
 }
 
 func NewConnection(username string, host string, password string, sshkey string, sshagent bool) error {
-	sshConfig := &ssh.ClientConfig{
-		User: username,
-		Auth: []ssh.AuthMethod{
-			ssh.Password(password),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	sshConfig := &ssh.ClientConfig{}
+
+	if password != "" {
+		sshConfig = &ssh.ClientConfig{
+			User: username,
+			Auth: []ssh.AuthMethod{
+				ssh.Password(password),
+			},
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		}
 	}
 	if sshkey != "" {
 		parsedKey, err := PublicKeyFile(sshkey)

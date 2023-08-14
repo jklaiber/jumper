@@ -15,39 +15,77 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-func PublicKeyFile(file string) ssh.AuthMethod {
-	buffer, err := ioutil.ReadFile(file)
+func readSSHKeyPassphrase(file string) ([]byte, error) {
+	fmt.Printf("Enter passphrase for key '%s':", file)
+	passphrase, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Println()
+
 	if err != nil {
-		return nil
+		fmt.Printf("Error reading passphrase: %v\n", err)
+		return nil, err
 	}
 
+	return passphrase, nil
+}
+
+func parsePrivateKeyWithPassphrase(file string, buffer []byte) (ssh.AuthMethod, error) {
+	passphrase, err := readSSHKeyPassphrase(file)
+	if err != nil {
+		fmt.Errorf("Error reading the passphrase: %s", err)
+		return nil, err
+	}
+	key, err := ssh.ParsePrivateKeyWithPassphrase(buffer, passphrase)
+	if err != nil {
+		return nil, fmt.Errorf("Error during parsing of pivate key; %v", err)
+	}
+	return ssh.PublicKeys(key), nil
+}
+
+func PublicKeyFile(file string) (ssh.AuthMethod, error) {
+	buffer, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, fmt.Errorf("Error during reading of private key; %v", err)
+	}
 	key, err := ssh.ParsePrivateKey(buffer)
 	if err != nil {
-		return nil
+		if _, ok := err.(*ssh.PassphraseMissingError); ok {
+			return parsePrivateKeyWithPassphrase(file, buffer)
+		} else {
+			return nil, fmt.Errorf("Error during parsing of pivate key; %v", err)
+		}
 	}
-	return ssh.PublicKeys(key)
+	return ssh.PublicKeys(key), nil
 }
 
 func SSHAgent() ssh.AuthMethod {
 	if sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
 		return ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers)
 	}
+	log.Fatal("There was an error using the ssh agent")
 	return nil
 }
 
 func NewConnection(username string, host string, password string, sshkey string, sshagent bool) error {
-	sshConfig := &ssh.ClientConfig{
-		User: username,
-		Auth: []ssh.AuthMethod{
-			ssh.Password(password),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-	if sshkey != "" {
+	sshConfig := &ssh.ClientConfig{}
+
+	if password != "" {
 		sshConfig = &ssh.ClientConfig{
 			User: username,
 			Auth: []ssh.AuthMethod{
-				PublicKeyFile(sshkey),
+				ssh.Password(password),
+			},
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		}
+	}
+	if sshkey != "" {
+		parsedKey, err := PublicKeyFile(sshkey)
+		if err != nil {
+			return fmt.Errorf("Could not read ssh key: %v", err)
+		}
+		sshConfig = &ssh.ClientConfig{
+			User: username,
+			Auth: []ssh.AuthMethod{
+				parsedKey,
 			},
 			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		}
@@ -86,7 +124,7 @@ func NewConnection(username string, host string, password string, sshkey string,
 func runShell(ctx context.Context, host string, sshConfig *ssh.ClientConfig) error {
 	conn, err := ssh.Dial("tcp", host+":22", sshConfig)
 	if err != nil {
-		log.Fatalf("error")
+		log.Fatalf("error: %s", err)
 	}
 	defer conn.Close()
 

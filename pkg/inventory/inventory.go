@@ -30,6 +30,7 @@ type Vars struct {
 	Address        string `yaml:"address,omitempty"`
 	AnsibleHost    string `yaml:"ansible_host,omitempty"`
 	SshAgent       bool   `yaml:"sshagent,omitempty"`
+	Port           int    `yaml:"port,omitempty"`
 }
 
 func NewInventory(filePath string) (inventory Inventory, err error) {
@@ -46,18 +47,18 @@ func NewInventory(filePath string) (inventory Inventory, err error) {
 	return
 }
 
-func (inventory *Inventory) GetAccessInformation(group string, host string) (username string, password string, sshkey string, sshagent bool, address string, err error) {
+func (inventory *Inventory) GetAccessInformation(group string, host string) (username string, password string, sshkey string, sshagent bool, address string, port int, err error) {
 	username, err = inventory.GetUsername(group, host)
 	if err != nil {
-		return "", "", "", false, "", errors.New("username for host not found")
+		return "", "", "", false, "", 0, errors.New("username for host not found")
 	}
 	password, sshkey, sshagent, err = inventory.getAccessMethod(group, host)
 	if err != nil {
-		return "", "", "", false, "", errors.New("no valid access method found")
+		return "", "", "", false, "", 0, errors.New("no valid access method found")
 	}
-	address, err = inventory.GetAddress(group, host)
+	address, port, err = inventory.GetAddress(group, host)
 	if err != nil {
-		return username, password, sshkey, sshagent, host, nil
+		return username, password, sshkey, sshagent, host, port, nil
 	}
 	return
 }

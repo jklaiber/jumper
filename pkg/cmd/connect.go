@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,12 +35,12 @@ var connectCmd = &cobra.Command{
 	Short: "Connect to a saved connection",
 	Args:  cobra.ExactValidArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		user, pass, sshkey, sshagent, addr, err := inv.GetAccessInformation(Group, args[0])
+		user, pass, sshkey, sshagent, addr, port, err := inv.GetAccessInformation(Group, args[0])
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		err = connection.NewConnection(user, addr, pass, sshkey, sshagent)
+		err = connection.NewConnection(user, addr, port, pass, sshkey, sshagent)
 		if err != nil {
 			log.Fatal(err)
 		}

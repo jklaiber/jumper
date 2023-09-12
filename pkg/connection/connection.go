@@ -65,7 +65,7 @@ func SSHAgent() ssh.AuthMethod {
 	return nil
 }
 
-func NewConnection(username string, host string, password string, sshkey string, sshagent bool) error {
+func NewConnection(username string, host string, port int, password string, sshkey string, sshagent bool) error {
 	sshConfig := &ssh.ClientConfig{}
 
 	if password != "" {
@@ -106,7 +106,7 @@ func NewConnection(username string, host string, password string, sshkey string,
 
 	fmt.Printf("Connecting to %s with %s\n\n", host, username)
 	go func() {
-		if err := runShell(ctx, host, sshConfig); err != nil {
+		if err := runShell(ctx, host, port, sshConfig); err != nil {
 			log.Print(err)
 		}
 		cancel()
@@ -121,8 +121,12 @@ func NewConnection(username string, host string, password string, sshkey string,
 	return nil
 }
 
-func runShell(ctx context.Context, host string, sshConfig *ssh.ClientConfig) error {
-	conn, err := ssh.Dial("tcp", host+":22", sshConfig)
+func runShell(ctx context.Context, host string, port int, sshConfig *ssh.ClientConfig) error {
+	if port == 0 {
+		port = 22
+	}
+	hostWithPort := fmt.Sprintf("%s:%d", host, port)
+	conn, err := ssh.Dial("tcp", hostWithPort, sshConfig)
 	if err != nil {
 		log.Fatalf("error: %s", err)
 	}

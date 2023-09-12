@@ -58,23 +58,17 @@ func (inventory *Inventory) GetAccessInformation(group string, host string) (use
 	}
 	address, port, err = inventory.GetAddress(group, host)
 	if err != nil {
-		return username, password, sshkey, sshagent, host, port, nil
+		return "", "", "", false, "", 0, errors.New("no valid address found")
 	}
-	return
+	return username, password, sshkey, sshagent, address, port, nil
 }
 
 func (inventory *Inventory) getAccessMethod(group string, host string) (string, string, bool, error) {
 	password, passerr := inventory.GetPassword(group, host)
 	sshkey, sshkeyerr := inventory.GetSshKey(group, host)
 	sshagent, _ := inventory.GetSshAgent(group, host)
-	if sshagent {
-		return "", "", true, nil
-	}
-	if sshkeyerr == nil {
-		return "", sshkey, false, nil
-	}
-	if passerr == nil {
-		return password, "", false, nil
+	if passerr == nil || sshkeyerr == nil || sshagent {
+		return password, sshkey, sshagent, nil
 	}
 	return "", "", false, errors.New("no valid access method found")
 }

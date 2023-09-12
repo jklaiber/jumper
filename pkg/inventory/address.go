@@ -2,22 +2,22 @@ package inventory
 
 import "errors"
 
-func (inventory *Inventory) GetAddress(group string, host string) (string, error) {
+func (inventory *Inventory) GetAddress(group string, host string) (string, int, error) {
 	if group != "" {
-		address, err := inventory.getGroupHostAddress(group, host)
+		address, port, err := inventory.getGroupHostAddress(group, host)
 		if err != nil {
-			return address, nil
+			return address, port, nil
 		}
-		return address, nil
+		return address, port, nil
 	}
-	address, err := inventory.getUngroupedHostAddress(host)
+	address, port, err := inventory.getUngroupedHostAddress(host)
 	if err != nil {
-		return address, nil
+		return address, port, nil
 	}
-	return address, nil
+	return address, port, nil
 }
 
-func (inventory *Inventory) getGroupHostAddress(group string, host string) (string, error) {
+func (inventory *Inventory) getGroupHostAddress(group string, host string) (string, int, error) {
 	address := ""
 	if inventory.All.Children[group].Hosts[host].Address != "" {
 		address = inventory.All.Children[group].Hosts[host].Address
@@ -25,12 +25,13 @@ func (inventory *Inventory) getGroupHostAddress(group string, host string) (stri
 		address = inventory.All.Children[group].Hosts[host].AnsibleHost
 	}
 	if address == "" {
-		return "", errors.New("host address does not exist")
+		return "", 0, errors.New("host address does not exist")
 	}
-	return address, nil
+	port := inventory.All.Children[group].Hosts[host].Port
+	return address, port, nil
 }
 
-func (inventory *Inventory) getUngroupedHostAddress(host string) (string, error) {
+func (inventory *Inventory) getUngroupedHostAddress(host string) (string, int, error) {
 	address := ""
 	if inventory.All.Hosts[host].Address != "" {
 		address = inventory.All.Hosts[host].Address
@@ -38,7 +39,8 @@ func (inventory *Inventory) getUngroupedHostAddress(host string) (string, error)
 		address = inventory.All.Hosts[host].AnsibleHost
 	}
 	if address == "" {
-		return "", errors.New("host address does not exist")
+		return "", 0, errors.New("host address does not exist")
 	}
-	return address, nil
+	port := inventory.All.Hosts[host].Port
+	return address, port, nil
 }

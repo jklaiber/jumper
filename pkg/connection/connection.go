@@ -66,38 +66,26 @@ func SSHAgent() ssh.AuthMethod {
 }
 
 func NewConnection(username string, host string, port int, password string, sshkey string, sshagent bool) error {
-	sshConfig := &ssh.ClientConfig{}
+	sshConfig := &ssh.ClientConfig{
+		User:            username,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Auth:            []ssh.AuthMethod{},
+	}
 
 	if password != "" {
-		sshConfig = &ssh.ClientConfig{
-			User: username,
-			Auth: []ssh.AuthMethod{
-				ssh.Password(password),
-			},
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		}
+		sshConfig.Auth = append(sshConfig.Auth, ssh.Password(password))
 	}
+
 	if sshkey != "" {
 		parsedKey, err := PublicKeyFile(sshkey)
 		if err != nil {
 			return fmt.Errorf("Could not read ssh key: %v", err)
 		}
-		sshConfig = &ssh.ClientConfig{
-			User: username,
-			Auth: []ssh.AuthMethod{
-				parsedKey,
-			},
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		}
+		sshConfig.Auth = append(sshConfig.Auth, parsedKey)
 	}
+
 	if sshagent {
-		sshConfig = &ssh.ClientConfig{
-			User: username,
-			Auth: []ssh.AuthMethod{
-				SSHAgent(),
-			},
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		}
+		sshConfig.Auth = append(sshConfig.Auth, SSHAgent())
 	}
 
 	sig := make(chan os.Signal, 1)

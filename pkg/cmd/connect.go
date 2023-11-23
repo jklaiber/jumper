@@ -59,8 +59,10 @@ func init() {
 	rootCmd.AddCommand(connectCmd)
 
 	connectCmd.Flags().StringVarP(&Group, groupFlagName, groupFlagNameShort, "", groupFlagDescription)
-	connectCmd.RegisterFlagCompletionFunc(groupFlagName, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err := connectCmd.RegisterFlagCompletionFunc(groupFlagName, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return inv.GetGroups(), cobra.ShellCompDirectiveDefault
-	})
+	}); err != nil {
+		log.Fatalf("could not register flag completion: %v", err)
+	}
 
 }

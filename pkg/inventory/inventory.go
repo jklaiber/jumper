@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"errors"
+	"fmt"
 
 	"gopkg.in/yaml.v2"
 )
@@ -38,58 +39,66 @@ func NewInventory(filePath string) (inventory Inventory, err error) {
 	// str, err := ioutil.ReadFile(filePath)
 	str, err := inventory.readEncryptedFile(filePath)
 	if err != nil {
-		return inventory, errors.New("inventory file could not be read")
+		return inventory, fmt.Errorf("inventory file could not be read")
 	}
 	err = yaml.Unmarshal([]byte(str), &inventory)
 	if err != nil {
-		return inventory, errors.New("inventory could not be unmarshalled")
+		return inventory, fmt.Errorf("inventory could not be unmarshalled")
 	}
 	return
 }
 
-func (inventory *Inventory) GetAccessInformation(group string, host string) (username string, password string, sshkey string, sshagent bool, address string, port int, err error) {
-	username, err = inventory.GetUsername(group, host)
+func (inventory *Inventory) GetAccessInformation(group string, host string) (string, string, string, bool, string, int, error) {
+	username, err := inventory.GetUsername(group, host)
 	if err != nil {
 		return "", "", "", false, "", 0, errors.New("username for host not found")
 	}
-	password, sshkey, sshagent, err = inventory.getAccessMethod(group, host)
+
+	password, sshkey, sshagent, err := inventory.getAccessMethod(group, host)
 	if err != nil {
 		return "", "", "", false, "", 0, errors.New("no valid access method found")
 	}
-	address, port, err = inventory.GetAddress(group, host)
+
+	address, port, err := inventory.GetAddress(group, host)
 	if err != nil {
 		return "", "", "", false, "", 0, errors.New("no valid address found")
 	}
+
 	return username, password, sshkey, sshagent, address, port, nil
 }
 
 func (inventory *Inventory) getAccessMethod(group string, host string) (string, string, bool, error) {
-	password, passerr := inventory.GetPassword(group, host)
-	sshkey, sshkeyerr := inventory.GetSshKey(group, host)
+	password, passErr := inventory.GetPassword(group, host)
+	sshkey, sshKeyErr := inventory.GetSshKey(group, host)
 	sshagent, _ := inventory.GetSshAgent(group, host)
-	if passerr == nil || sshkeyerr == nil || sshagent {
+
+	if passErr == nil || sshKeyErr == nil || sshagent {
 		return password, sshkey, sshagent, nil
 	}
-	return "", "", false, errors.New("no valid access method found")
+
+	return "", "", false, fmt.Errorf("no valid access method found")
 }
 
-func (inventory *Inventory) GetUngroupedHosts() (ungroupedHosts []string) {
-	for key, _ := range inventory.All.Hosts {
+func (inventory *Inventory) GetUngroupedHosts() []string {
+	var ungroupedHosts []string
+	for key := range inventory.All.Hosts {
 		ungroupedHosts = append(ungroupedHosts, key)
 	}
-	return
+	return ungroupedHosts
 }
 
-func (inventory *Inventory) GetGroups() (groups []string) {
-	for key, _ := range inventory.All.Children {
+func (inventory *Inventory) GetGroups() []string {
+	var groups []string
+	for key := range inventory.All.Children {
 		groups = append(groups, key)
 	}
-	return
+	return groups
 }
 
-func (inventory *Inventory) GetGroupHosts(group string) (groupHosts []string) {
-	for key, _ := range inventory.All.Children[group].Hosts {
+func (inventory *Inventory) GetGroupHosts(group string) []string {
+	var groupHosts []string
+	for key := range inventory.All.Children[group].Hosts {
 		groupHosts = append(groupHosts, key)
 	}
-	return
+	return groupHosts
 }

@@ -1,95 +1,70 @@
 package inventory
 
 import (
-	"errors"
-	"io/ioutil"
+	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/jklaiber/jumper/pkg/common"
 	vault "github.com/sosedoff/ansible-vault-go"
+	"gopkg.in/yaml.v2"
 )
 
-func (inventory *Inventory) EditInventory(filePath string, password string) (err error) {
-	result, err := vault.DecryptFile(filePath, common.GetSecretFromKeyring())
+func (inventory *Inventory) EditInventory(filePath string) error {
+	secret := common.GetSecretFromKeyring()
+
+	decryptedContents, err := vault.DecryptFile(filePath, secret)
 	if err != nil {
-		return errors.New("file could not be decrypted")
+		return fmt.Errorf("file decryption failed: %v", err)
 	}
 
-	// Create a new temp file
-	var tempFile *os.File
-	tempFile, err = createTempFile()
+	tempFile, err := os.CreateTemp("", "vault")
 	if err != nil {
-		return errors.New("temporary file could not be created")
+		return fmt.Errorf("temporary file creation failed: %v", err)
+	}
+	defer tempFile.Close()
+	defer os.Remove(tempFile.Name())
+
+	if err := os.WriteFile(tempFile.Name(), []byte(decryptedContents), 0644); err != nil {
+		return fmt.Errorf("writing to temporary file failed: %v", err)
 	}
 
-	// Write decrypted inputs to temp file
-	err = ioutil.WriteFile(tempFile.Name(), []byte(result), 0644)
-	if err != nil {
-		return errors.New("inventory could not be written to temporary file")
-	}
-
-	// Open editor for modifications
-	cmd := exec.Command(getEditor(), tempFile.Name())
+	editor := getEditor()
+	cmd := exec.Command(editor, tempFile.Name())
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
-	err = cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%s failed to start: %v", editor, err)
+	}
+
+	editedContents, err := os.ReadFile(tempFile.Name())
 	if err != nil {
-		return errors.New("could not start the editor")
+		return fmt.Errorf("reading temporary file failed: %v", err)
 	}
 
-	// Encrypt changed content
-	var unencryptedContents []byte
-	unencryptedContents, err = ioutil.ReadFile(tempFile.Name())
-	if err != nil {
-		return err
-	}
-	err = vault.EncryptFile(filePath, string(unencryptedContents), common.GetSecretFromKeyring())
-	if err != nil {
-		return errors.New("could not encrypt temporary file")
-	}
+	convertedContents := strings.ReplaceAll(string(editedContents), "\t", "    ")
 
-	err = tempFile.Close()
-	if err != nil {
-		return errors.New("temporary file could not be closed")
+	var yamlContent interface{}
+	if err := yaml.Unmarshal([]byte(convertedContents), &yamlContent); err != nil {
+		if err = vault.EncryptFile(filePath, string(decryptedContents), secret); err != nil {
+			return fmt.Errorf("file encription of original content fialed: %v", err)
+		}
+		return fmt.Errorf("YAML validation failed: %v", err)
 	}
 
-	err = cleanupFile(tempFile)
-	if err != nil {
-		return err
+	if err := vault.EncryptFile(filePath, string(convertedContents), secret); err != nil {
+		return fmt.Errorf("file encryption failed: %v", err)
 	}
 
-	return err
-}
-
-func createTempFile() (*os.File, error) {
-	t, err := ioutil.TempFile("", "vault")
-	if err != nil {
-		return nil, err
-	}
-	return t, nil
-}
-
-func cleanupFile(t *os.File) error {
-
-	_, err := os.Stat(t.Name())
-	if os.IsNotExist(err) {
-		return nil
-	}
-
-	// Delete the temp file
-	err = os.Remove(t.Name())
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
 func getEditor() string {
-	var editorEnv = os.Getenv("EDITOR")
-	if editorEnv == "" {
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
 		return "vim"
 	}
-	return editorEnv
+	return editor
 }

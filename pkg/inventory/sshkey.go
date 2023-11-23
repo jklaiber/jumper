@@ -1,62 +1,43 @@
 package inventory
 
-import "errors"
+import (
+	"fmt"
+)
 
 func (inventory *Inventory) GetSshKey(group string, host string) (string, error) {
 	if group != "" {
-		sshkey, err := inventory.getGroupHostSshKey(group, host)
-		if err != nil {
-			sshkey, err = inventory.getGroupSshKey(group)
-			if err != nil {
-				sshkey, err = inventory.getGlobalSshKey()
-				if err != nil {
-					return "", err
-				}
-				return sshkey, nil
-			}
+		if sshkey, err := inventory.getGroupHostSshKey(group, host); err == nil {
 			return sshkey, nil
 		}
-		return sshkey, nil
-	}
-	sshkey, err := inventory.getUngroupedHostSshKey(host)
-	if err != nil {
-		sshkey, err = inventory.getGlobalSshKey()
-		if err != nil {
-			return "", err
+		if sshkey, err := inventory.getGroupSshKey(group); err == nil {
+			return sshkey, nil
 		}
+	}
+	if sshkey, err := inventory.getUngroupedHostSshKey(host); err == nil {
 		return sshkey, nil
 	}
-	return sshkey, nil
+	return inventory.getGlobalSshKey()
 }
 
 func (inventory *Inventory) getGlobalSshKey() (string, error) {
-	sshkey := inventory.All.Vars.SshKey
-	if sshkey == "" {
-		return "", errors.New("global sshkey does not exist")
-	}
-	return sshkey, nil
+	return getSshKeyFromVars(inventory.All.Vars)
 }
 
 func (inventory *Inventory) getGroupSshKey(group string) (string, error) {
-	sshkey := inventory.All.Children[group].Vars.SshKey
-	if sshkey == "" {
-		return "", errors.New("group sshkey does not exist")
-	}
-	return sshkey, nil
+	return getSshKeyFromVars(inventory.All.Children[group].Vars)
 }
 
 func (inventory *Inventory) getGroupHostSshKey(group string, host string) (string, error) {
-	sshkey := inventory.All.Children[group].Hosts[host].SshKey
-	if sshkey == "" {
-		return "", errors.New("host sshkey does not exist")
-	}
-	return sshkey, nil
+	return getSshKeyFromVars(inventory.All.Children[group].Hosts[host])
 }
 
 func (inventory *Inventory) getUngroupedHostSshKey(host string) (string, error) {
-	sshkey := inventory.All.Hosts[host].SshKey
-	if sshkey == "" {
-		return "", errors.New("host sshkey does not exist")
+	return getSshKeyFromVars(inventory.All.Hosts[host])
+}
+
+func getSshKeyFromVars(vars Vars) (string, error) {
+	if vars.SshKey != "" {
+		return vars.SshKey, nil
 	}
-	return sshkey, nil
+	return "", fmt.Errorf("ssh key not enabled")
 }

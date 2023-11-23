@@ -3,7 +3,6 @@ package connection
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -12,60 +11,55 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 func readSSHKeyPassphrase(file string) ([]byte, error) {
-	fmt.Printf("Enter passphrase for key '%s':", file)
-	passphrase, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Printf("Enter passphrase for key '%s': ", file)
+	passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
 	fmt.Println()
-
 	if err != nil {
-		fmt.Printf("Error reading passphrase: %v\n", err)
-		return nil, err
+		return nil, fmt.Errorf("error reading passphrase: %v", err)
 	}
-
 	return passphrase, nil
 }
 
 func parsePrivateKeyWithPassphrase(file string, buffer []byte) (ssh.AuthMethod, error) {
 	passphrase, err := readSSHKeyPassphrase(file)
 	if err != nil {
-		fmt.Errorf("Error reading the passphrase: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("error reading the passphrase: %v", err)
 	}
 	key, err := ssh.ParsePrivateKeyWithPassphrase(buffer, passphrase)
 	if err != nil {
-		return nil, fmt.Errorf("Error during parsing of pivate key; %v", err)
+		return nil, fmt.Errorf("error parsing private key: %v", err)
 	}
 	return ssh.PublicKeys(key), nil
 }
 
 func PublicKeyFile(file string) (ssh.AuthMethod, error) {
-	buffer, err := ioutil.ReadFile(file)
+	buffer, err := os.ReadFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("Error during reading of private key; %v", err)
+		return nil, fmt.Errorf("error reading private key: %v", err)
 	}
 	key, err := ssh.ParsePrivateKey(buffer)
 	if err != nil {
 		if _, ok := err.(*ssh.PassphraseMissingError); ok {
 			return parsePrivateKeyWithPassphrase(file, buffer)
-		} else {
-			return nil, fmt.Errorf("Error during parsing of pivate key; %v", err)
 		}
+		return nil, fmt.Errorf("error parsing private key: %v", err)
 	}
 	return ssh.PublicKeys(key), nil
 }
 
-func SSHAgent() ssh.AuthMethod {
-	if sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
-		return ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers)
+func SSHAgent() (ssh.AuthMethod, error) {
+	sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK"))
+	if err != nil {
+		return nil, fmt.Errorf("error using SSH agent: %v", err)
 	}
-	log.Fatal("There was an error using the ssh agent")
-	return nil
+	return ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers), nil
 }
 
-func NewConnection(username string, host string, port int, password string, sshkey string, sshagent bool) error {
+func NewConnection(username, host string, port int, password, sshkey string, sshagent bool) error {
 	sshConfig := &ssh.ClientConfig{
 		User:            username,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
@@ -79,13 +73,18 @@ func NewConnection(username string, host string, port int, password string, sshk
 	if sshkey != "" {
 		parsedKey, err := PublicKeyFile(sshkey)
 		if err != nil {
-			return fmt.Errorf("Could not read ssh key: %v", err)
+			return fmt.Errorf("could not read SSH key: %v", err)
 		}
 		sshConfig.Auth = append(sshConfig.Auth, parsedKey)
 	}
 
 	if sshagent {
-		sshConfig.Auth = append(sshConfig.Auth, SSHAgent())
+		agentAuth, err := SSHAgent()
+		if err != nil {
+			log.Printf("SSH agent error: %v", err)
+		} else {
+			sshConfig.Auth = append(sshConfig.Auth, agentAuth)
+		}
 	}
 
 	sig := make(chan os.Signal, 1)
@@ -132,13 +131,18 @@ func runShell(ctx context.Context, host string, port int, sshConfig *ssh.ClientC
 	}()
 
 	fd := int(os.Stdin.Fd())
-	state, err := terminal.MakeRaw(fd)
+	state, err := term.MakeRaw(fd)
 	if err != nil {
 		return fmt.Errorf("terminal make raw: %s", err)
 	}
-	defer terminal.Restore(fd, state)
 
-	w, h, err := terminal.GetSize(fd)
+	defer func() {
+		if err := term.Restore(fd, state); err != nil {
+			log.Printf("could not restore terminal: %v", err)
+		}
+	}()
+
+	w, h, err := term.GetSize(fd)
 	if err != nil {
 		return fmt.Errorf("terminal get size: %s", err)
 	}

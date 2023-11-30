@@ -35,15 +35,16 @@ var connectCmd = &cobra.Command{
 	Short: "Connect to a saved connection",
 	Args:  cobra.ExactValidArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		user, pass, sshkey, sshagent, addr, port, err := inv.GetAccessInformation(Group, args[0])
+		accessConfig, err := inv.GetAccessConfig(Group, args[0])
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		err = connection.NewConnection(user, addr, port, pass, sshkey, sshagent)
+		connection, err := connection.NewConnection(accessConfig)
 		if err != nil {
 			log.Fatal(err)
 		}
+		connection.Start()
 	},
 	ValidArgsFunction: UngroupedHostGet,
 }

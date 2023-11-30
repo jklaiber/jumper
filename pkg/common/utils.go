@@ -1,7 +1,7 @@
 package common
 
 import (
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -10,7 +10,7 @@ import (
 
 var cfgFile string
 
-func InitConfig() {
+func InitConfig() error {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
@@ -22,24 +22,29 @@ func InitConfig() {
 		viper.SetConfigName(".jumper")
 	}
 
-	viper.AutomaticEnv() // read in environment variables that match
+	viper.AutomaticEnv()
 
-	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("could not read config file")
+		return fmt.Errorf("could not read config file: %v", err)
 	}
+
+	return nil
 }
 
-func GetConfigurationFilePath() string {
+func GetConfigurationFilePath() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatalf("could not get home directory")
+		return "", fmt.Errorf("could not get home directory")
 	}
-	return home + "/" + ConfigurationFileName
+	return home + "/" + ConfigurationFileName, nil
 }
 
 func ConfigurationFileExists() bool {
-	if _, err := os.Stat(GetConfigurationFilePath()); os.IsNotExist(err) {
+	configurationFilePath, err := GetConfigurationFilePath()
+	if err != nil {
+		return false
+	}
+	if _, err := os.Stat(configurationFilePath); os.IsNotExist(err) {
 		return false
 	}
 	return true
@@ -58,12 +63,8 @@ func InventoryFileExists() bool {
 }
 
 func IsConfigured() bool {
-	if ConfigurationFileExists() {
-		if InventoryFileExists() {
-			if SecretAvailableFromKeyring() {
-				return true
-			}
-		}
+	if ConfigurationFileExists() && InventoryFileExists() && SecretAvailableFromKeyring() {
+		return true
 	}
 	return false
 }

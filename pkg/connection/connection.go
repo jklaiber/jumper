@@ -9,76 +9,38 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/jklaiber/jumper/pkg/inventory"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/term"
 )
 
-func readSSHKeyPassphrase(file string) ([]byte, error) {
-	fmt.Printf("Enter passphrase for key '%s': ", file)
-	passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
-	fmt.Println()
-	if err != nil {
-		return nil, fmt.Errorf("error reading passphrase: %v", err)
-	}
-	return passphrase, nil
+type Connection struct {
+	accessConfig *inventory.AccessConfig
+	sshConfig    *ssh.ClientConfig
+	sshAgent     net.Conn
 }
 
-func parsePrivateKeyWithPassphrase(file string, buffer []byte) (ssh.AuthMethod, error) {
-	passphrase, err := readSSHKeyPassphrase(file)
-	if err != nil {
-		return nil, fmt.Errorf("error reading the passphrase: %v", err)
-	}
-	key, err := ssh.ParsePrivateKeyWithPassphrase(buffer, passphrase)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing private key: %v", err)
-	}
-	return ssh.PublicKeys(key), nil
-}
-
-func PublicKeyFile(file string) (ssh.AuthMethod, error) {
-	buffer, err := os.ReadFile(file)
-	if err != nil {
-		return nil, fmt.Errorf("error reading private key: %v", err)
-	}
-	key, err := ssh.ParsePrivateKey(buffer)
-	if err != nil {
-		if _, ok := err.(*ssh.PassphraseMissingError); ok {
-			return parsePrivateKeyWithPassphrase(file, buffer)
-		}
-		return nil, fmt.Errorf("error parsing private key: %v", err)
-	}
-	return ssh.PublicKeys(key), nil
-}
-
-func SSHAgent() (ssh.AuthMethod, error) {
-	sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK"))
-	if err != nil {
-		return nil, fmt.Errorf("error using SSH agent: %v", err)
-	}
-	return ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers), nil
-}
-
-func NewConnection(username, host string, port int, password, sshkey string, sshagent bool) error {
+func NewConnection(accessConfig *inventory.AccessConfig) (*Connection, error) {
 	sshConfig := &ssh.ClientConfig{
-		User:            username,
+		User:            accessConfig.Username,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Auth:            []ssh.AuthMethod{},
 	}
 
-	if password != "" {
-		sshConfig.Auth = append(sshConfig.Auth, ssh.Password(password))
+	if accessConfig.Password != "" {
+		sshConfig.Auth = append(sshConfig.Auth, ssh.Password(accessConfig.Password))
 	}
 
-	if sshkey != "" {
-		parsedKey, err := PublicKeyFile(sshkey)
+	if accessConfig.SshKey != "" {
+		parsedKey, err := PublicKeyFile(accessConfig.SshKey)
 		if err != nil {
-			return fmt.Errorf("could not read SSH key: %v", err)
+			return nil, fmt.Errorf("could not read SSH key: %v", err)
 		}
 		sshConfig.Auth = append(sshConfig.Auth, parsedKey)
 	}
 
-	if sshagent {
+	if accessConfig.SshAgent {
 		agentAuth, err := SSHAgent()
 		if err != nil {
 			log.Printf("SSH agent error: %v", err)
@@ -87,13 +49,20 @@ func NewConnection(username, host string, port int, password, sshkey string, ssh
 		}
 	}
 
+	return &Connection{
+		accessConfig: accessConfig,
+		sshConfig:    sshConfig,
+	}, nil
+}
+
+func (connection *Connection) Start() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 	ctx, cancel := context.WithCancel(context.Background())
 
-	fmt.Printf("Connecting to %s with %s\n\n", host, username)
+	fmt.Printf("Connecting to %s with %s\n\n", connection.accessConfig.Address, connection.accessConfig.Username)
 	go func() {
-		if err := runShell(ctx, host, port, sshConfig); err != nil {
+		if err := connection.runShell(ctx); err != nil {
 			log.Print(err)
 		}
 		cancel()
@@ -105,15 +74,14 @@ func NewConnection(username, host string, port int, password, sshkey string, ssh
 	case <-ctx.Done():
 	}
 
-	return nil
 }
 
-func runShell(ctx context.Context, host string, port int, sshConfig *ssh.ClientConfig) error {
-	if port == 0 {
-		port = 22
+func (connection *Connection) runShell(ctx context.Context) error {
+	if connection.accessConfig.Port == 0 {
+		connection.accessConfig.Port = 22
 	}
-	hostWithPort := fmt.Sprintf("%s:%d", host, port)
-	conn, err := ssh.Dial("tcp", hostWithPort, sshConfig)
+	hostWithPort := fmt.Sprintf("%s:%d", connection.accessConfig.Address, connection.accessConfig.Port)
+	conn, err := ssh.Dial("tcp", hostWithPort, connection.sshConfig)
 	if err != nil {
 		log.Fatalf("error: %s", err)
 	}
@@ -124,6 +92,16 @@ func runShell(ctx context.Context, host string, port int, sshConfig *ssh.ClientC
 		return fmt.Errorf("cannot open new session: %v", err)
 	}
 	defer session.Close()
+
+	if connection.accessConfig.SshAgentForwarding {
+		if err := agent.ForwardToRemote(conn, os.Getenv("SSH_AUTH_SOCK")); err != nil {
+			return fmt.Errorf("error forwarding to remote: %v", err)
+		}
+
+		if err := agent.RequestAgentForwarding(session); err != nil {
+			return fmt.Errorf("error requesting agent forwarding: %v", err)
+		}
+	}
 
 	go func() {
 		<-ctx.Done()
@@ -168,6 +146,9 @@ func runShell(ctx context.Context, host string, port int, sshConfig *ssh.ClientC
 	if err := session.Shell(); err != nil {
 		return fmt.Errorf("session shell: %s", err)
 	}
+
+	// TODO check in ssh/sshd_config if enable ssh agent forwarding solves the problem...
+	// When yes create a config option for the agent forwarding...
 
 	if err := session.Wait(); err != nil {
 		if e, ok := err.(*ssh.ExitError); ok {

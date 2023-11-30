@@ -148,7 +148,9 @@ func Setup() error {
 		common.SetSecretInKeyring(secret)
 	}
 	if !common.InventoryFileExists() {
-		common.InitConfig()
+		if err := common.InitConfig(); err != nil {
+			return err
+		}
 		if err := confirm("Do you want to create a new empty inventory file"); err != nil {
 			return err
 		}

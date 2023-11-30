@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,7 +17,6 @@ import (
 type Connection struct {
 	accessConfig *inventory.AccessConfig
 	sshConfig    *ssh.ClientConfig
-	sshAgent     net.Conn
 }
 
 func NewConnection(accessConfig *inventory.AccessConfig) (*Connection, error) {

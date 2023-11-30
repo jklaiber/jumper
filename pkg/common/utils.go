@@ -51,7 +51,6 @@ func ConfigurationFileExists() bool {
 }
 
 func GetInventoryFilePath() string {
-	InitConfig()
 	return viper.GetString(InventoryYamlKey)
 }
 

@@ -38,14 +38,14 @@ func Execute() {
 }
 
 func init() {
+	err := common.InitConfig()
+	if err != nil {
+		log.Fatalf("could not initialize config: %v", err)
+	}
 	if !common.IsConfigured() {
 		if err := setup.Setup(); err != nil {
 			log.Fatalf("could not setup jumper: %v", err)
 		}
-	}
-	err := common.InitConfig()
-	if err != nil {
-		log.Fatalf("could not initialize config: %v", err)
 	}
 	cobra.OnInitialize(initInventory)
 }

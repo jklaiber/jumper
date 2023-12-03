@@ -22,8 +22,6 @@ import (
 	"github.com/jklaiber/jumper/pkg/inventory"
 	"github.com/jklaiber/jumper/pkg/setup"
 	"github.com/spf13/cobra"
-
-	"github.com/spf13/viper"
 )
 
 var inv inventory.Inventory
@@ -51,7 +49,10 @@ func init() {
 }
 
 func initInventory() {
-	inventoryFile := viper.GetString("inventory_file")
+	inventoryFile, err := common.GetInventoryFilePath()
+	if err != nil {
+		log.Fatalf("could not get inventory file path")
+	}
 	inventory, err := inventory.NewInventory(inventoryFile)
 	if err != nil {
 		log.Fatalf("could not create inventory")

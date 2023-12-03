@@ -154,7 +154,13 @@ func Setup() error {
 		if err := confirm("Do you want to create a new empty inventory file"); err != nil {
 			return err
 		}
-		if err := createInventory(common.GetInventoryFilePath()); err != nil {
+
+		inventory_path, err := common.GetInventoryFilePath()
+		if err != nil {
+			return err
+		}
+
+		if err := createInventory(inventory_path); err != nil {
 			return err
 		}
 	}

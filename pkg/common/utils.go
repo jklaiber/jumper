@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -50,12 +51,24 @@ func ConfigurationFileExists() bool {
 	return true
 }
 
-func GetInventoryFilePath() string {
-	return viper.GetString(InventoryYamlKey)
+func GetInventoryFilePath() (string, error) {
+	inventory_path := viper.GetString(InventoryYamlKey)
+	if strings.HasPrefix(inventory_path, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("could not get home directory")
+		}
+		inventory_path = home + inventory_path[1:]
+	}
+	return inventory_path, nil
 }
 
 func InventoryFileExists() bool {
-	if _, err := os.Stat(GetInventoryFilePath()); os.IsNotExist(err) {
+	inventory_path, err := GetInventoryFilePath()
+	if err != nil {
+		return false
+	}
+	if _, err := os.Stat(inventory_path); os.IsNotExist(err) {
 		return false
 	}
 	return true

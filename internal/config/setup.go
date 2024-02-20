@@ -1,11 +1,11 @@
-package setup
+package config
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/jklaiber/jumper/internal/common"
-	"github.com/jklaiber/jumper/internal/config"
+	"github.com/jklaiber/jumper/internal/secret"
 	"github.com/manifoldco/promptui"
 	vault "github.com/sosedoff/ansible-vault-go"
 	"gopkg.in/yaml.v2"
@@ -90,7 +90,7 @@ func createInventory(inventoryDestination string) error {
 	}
 	defer file.Close()
 
-	err = vault.EncryptFile(inventoryDestination, "", common.GetSecretFromKeyring())
+	err = vault.EncryptFile(inventoryDestination, "", secret.GetSecretFromKeyring())
 	if err != nil {
 		return fmt.Errorf("could not encrypt inventory file")
 	}
@@ -110,7 +110,7 @@ func createConfigFile(inventoryDestination string) error {
 		return fmt.Errorf("could not marshal config file")
 	}
 
-	err = os.WriteFile(home+"/"+config.ConfigurationFileName, data, 0644)
+	err = os.WriteFile(home+"/"+common.ConfigurationFileName, data, 0644)
 	if err != nil {
 		return fmt.Errorf("could not write config file")
 	}
@@ -126,7 +126,7 @@ func Setup() error {
 	if err := confirm("Do you want to configure jumper"); err != nil {
 		return err
 	}
-	if !common.ConfigurationFileExists() {
+	if !ConfigurationFileExists() {
 		if err := confirm("Do you want to create a new configuration file"); err != nil {
 			return err
 		}
@@ -138,25 +138,25 @@ func Setup() error {
 			return err
 		}
 	}
-	if !common.SecretAvailableFromKeyring() {
+	if !secret.SecretAvailableFromKeyring() {
 		if err := confirm("Do you want to create a new encryption password"); err != nil {
 			return err
 		}
-		secret, err := promptSecret()
+		s, err := promptSecret()
 		if err != nil {
 			return err
 		}
-		common.SetSecretInKeyring(secret)
+		secret.SetSecretInKeyring(s)
 	}
-	if !common.InventoryFileExists() {
-		if err := config.Parse(); err != nil {
+	if !InventoryFileExists() {
+		if err := Parse(); err != nil {
 			return err
 		}
 		if err := confirm("Do you want to create a new empty inventory file"); err != nil {
 			return err
 		}
 
-		inventory_path, err := common.GetInventoryFilePath()
+		inventory_path, err := GetInventoryFilePath()
 		if err != nil {
 			return err
 		}

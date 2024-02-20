@@ -1,15 +1,15 @@
-package common
+package config
 
 import (
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/jklaiber/jumper/internal/config"
+	"github.com/jklaiber/jumper/internal/secret"
 )
 
 func ConfigurationFileExists() bool {
-	configurationFilePath, err := config.GetConfigurationFilePath()
+	configurationFilePath, err := GetConfigurationFilePath()
 	if err != nil {
 		return false
 	}
@@ -20,7 +20,7 @@ func ConfigurationFileExists() bool {
 }
 
 func GetInventoryFilePath() (string, error) {
-	inventory_path := config.Params.InventoryPath
+	inventory_path := Params.InventoryPath
 	if strings.HasPrefix(inventory_path, "~/") {
 		home, err := os.UserHomeDir()
 		if err != nil {
@@ -43,7 +43,7 @@ func InventoryFileExists() bool {
 }
 
 func IsConfigured() bool {
-	if ConfigurationFileExists() && InventoryFileExists() && SecretAvailableFromKeyring() {
+	if ConfigurationFileExists() && InventoryFileExists() && secret.SecretAvailableFromKeyring() {
 		return true
 	}
 	return false

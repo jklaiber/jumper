@@ -62,5 +62,5 @@ archives:
       owner: root
     files:
       - README.md
-      - LICENSE.md
+      - LICENSE
       - completions/*

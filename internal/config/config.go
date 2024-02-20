@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jklaiber/jumper/internal/common"
 	"github.com/spf13/viper"
 )
-
-const ConfigurationFileName = ".jumper.yaml"
 
 var (
 	viperInstance = viper.New()
@@ -29,7 +28,7 @@ func GetConfigurationFilePath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not get home directory")
 	}
-	return home + "/" + ConfigurationFileName, nil
+	return home + "/" + common.ConfigurationFileName, nil
 }
 
 func Parse() error {

@@ -1,9 +1,10 @@
-package common
+package secret
 
 import (
 	"log"
 	"os/user"
 
+	"github.com/jklaiber/jumper/internal/common"
 	"github.com/zalando/go-keyring"
 )
 
@@ -16,14 +17,14 @@ func getUsername() (username string) {
 }
 
 func SetSecretInKeyring(secret string) {
-	err := keyring.Set(ServiceName, getUsername(), secret)
+	err := keyring.Set(common.ServiceName, getUsername(), secret)
 	if err != nil {
 		log.Fatal("could not set secret in keyring")
 	}
 }
 
 func GetSecretFromKeyring() (secret string) {
-	secret, err := keyring.Get(ServiceName, getUsername())
+	secret, err := keyring.Get(common.ServiceName, getUsername())
 	if err != nil {
 		log.Fatal("could not get secret from keyring")
 	}
@@ -31,13 +32,13 @@ func GetSecretFromKeyring() (secret string) {
 }
 
 func DeleteSecretFromKeyring() {
-	err := keyring.Delete(ServiceName, getUsername())
+	err := keyring.Delete(common.ServiceName, getUsername())
 	if err != nil {
 		log.Fatal("could not delete secret from keyring")
 	}
 }
 
 func SecretAvailableFromKeyring() (available bool) {
-	_, err := keyring.Get(ServiceName, getUsername())
+	_, err := keyring.Get(common.ServiceName, getUsername())
 	return err == nil
 }

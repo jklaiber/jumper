@@ -6,13 +6,13 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/jklaiber/jumper/internal/common"
+	"github.com/jklaiber/jumper/internal/secret"
 	vault "github.com/sosedoff/ansible-vault-go"
 	"gopkg.in/yaml.v2"
 )
 
 func (inventory *Inventory) EditInventory(filePath string) error {
-	secret := common.GetSecretFromKeyring()
+	secret := secret.GetSecretFromKeyring()
 
 	decryptedContents, err := vault.DecryptFile(filePath, secret)
 	if err != nil {

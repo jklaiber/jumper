@@ -14,6 +14,8 @@
 # Build exclusion
 *.out
 out
+dist
+completions
 
 # Project specific exclusion
 inventory.yaml

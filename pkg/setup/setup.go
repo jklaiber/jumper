@@ -1,13 +1,11 @@
 package setup
 
 import (
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
 
-	"github.com/jklaiber/jumper/pkg/common"
+	"github.com/jklaiber/jumper/internal/common"
+	"github.com/jklaiber/jumper/internal/config"
 	"github.com/manifoldco/promptui"
 	vault "github.com/sosedoff/ansible-vault-go"
 	"gopkg.in/yaml.v2"
@@ -29,23 +27,24 @@ type ConfigFile struct {
 	InventoryFilePath string `yaml:"inventory_file"`
 }
 
-func Confirm(text string) {
+func confirm(text string) error {
 	prompt := promptui.Prompt{
 		Label:     text,
 		IsConfirm: true,
 	}
 
 	_, err := prompt.Run()
-
 	if err != nil {
-		log.Fatalf("Prompt aborted")
+		return fmt.Errorf("confirmation failed %v", err)
 	}
+
+	return nil
 }
 
 func promptSecret() (secret string, err error) {
 	validate := func(input string) error {
 		if len(input) < 6 {
-			return errors.New("Password must have more than 6 characters")
+			return fmt.Errorf("password must have more than 6 characters")
 		}
 		return nil
 	}
@@ -57,10 +56,8 @@ func promptSecret() (secret string, err error) {
 	}
 
 	secret, err = prompt.Run()
-
 	if err != nil {
-		log.Fatalf("Prompt failed %v\n", err)
-		return
+		return "", fmt.Errorf("password prompt failed %v", err)
 	}
 
 	return secret, nil
@@ -69,7 +66,7 @@ func promptSecret() (secret string, err error) {
 func promptInventoryDestination() (destination string, err error) {
 	validate := func(input string) error {
 		if len(input) < 1 {
-			return errors.New("Destination must be a valid path")
+			return fmt.Errorf("destination must be a valid path")
 		}
 		return nil
 	}
@@ -81,53 +78,70 @@ func promptInventoryDestination() (destination string, err error) {
 	destination, err = prompt.Run()
 
 	if err != nil {
-		log.Fatalf("Prompt failed %v\n", err)
+		return "", fmt.Errorf("inventory destination prompt failed %v", err)
 	}
 	return destination, nil
 }
 
-func createInventory(inventoryDestination string) {
+func createInventory(inventoryDestination string) error {
 	file, err := os.OpenFile(inventoryDestination, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
-		log.Fatal(err)
-		log.Fatalf("could not create empty inventory file")
+		return fmt.Errorf("could not create inventory file")
 	}
-	file.Close()
+	defer file.Close()
+
 	err = vault.EncryptFile(inventoryDestination, "", common.GetSecretFromKeyring())
 	if err != nil {
-		log.Fatalf("could not encrypt empty inventory file")
+		return fmt.Errorf("could not encrypt inventory file")
 	}
+
+	return nil
 }
 
-func createConfigFile(inventoryDestination string) {
+func createConfigFile(inventoryDestination string) error {
 	home, err := os.UserHomeDir()
-	config := ConfigFile{InventoryFilePath: inventoryDestination}
-	data, err := yaml.Marshal(&config)
 	if err != nil {
-		log.Fatalf("could not marshal config file")
+		return fmt.Errorf("could not get home directory")
 	}
-	err = ioutil.WriteFile(home+"/"+common.ConfigurationFileName, data, 0644)
+
+	configFile := ConfigFile{InventoryFilePath: inventoryDestination}
+	data, err := yaml.Marshal(&configFile)
 	if err != nil {
-		log.Fatalf("could not write config file")
+		return fmt.Errorf("could not marshal config file")
 	}
+
+	err = os.WriteFile(home+"/"+config.ConfigurationFileName, data, 0644)
+	if err != nil {
+		return fmt.Errorf("could not write config file")
+	}
+
+	return nil
 }
 
-func Setup() (err error) {
-	fmt.Printf(logo)
-	fmt.Println("It seems, that jumper is not fully configured")
-	fmt.Println("Please follow the steps to setup jumper")
+func Setup() error {
+	fmt.Print(logo)
+	fmt.Println("It seems, that jumper is not fully configured.")
+	fmt.Println("Please follow the steps to setup jumper:")
 	fmt.Println("")
-	Confirm("Do you want to configure jumper")
+	if err := confirm("Do you want to configure jumper"); err != nil {
+		return err
+	}
 	if !common.ConfigurationFileExists() {
-		Confirm("Do you want to create a new configuration file")
+		if err := confirm("Do you want to create a new configuration file"); err != nil {
+			return err
+		}
 		inventoryDestination, err := promptInventoryDestination()
 		if err != nil {
 			return err
 		}
-		createConfigFile(inventoryDestination)
+		if err := createConfigFile(inventoryDestination); err != nil {
+			return err
+		}
 	}
 	if !common.SecretAvailableFromKeyring() {
-		Confirm("Do you want to create a new encryption password")
+		if err := confirm("Do you want to create a new encryption password"); err != nil {
+			return err
+		}
 		secret, err := promptSecret()
 		if err != nil {
 			return err
@@ -135,10 +149,21 @@ func Setup() (err error) {
 		common.SetSecretInKeyring(secret)
 	}
 	if !common.InventoryFileExists() {
-		common.InitConfig()
-		Confirm("Do you want to create a new empty inventory file")
-		createInventory(common.GetInventoryFilePath())
+		if err := config.Parse(); err != nil {
+			return err
+		}
+		if err := confirm("Do you want to create a new empty inventory file"); err != nil {
+			return err
+		}
+
+		inventory_path, err := common.GetInventoryFilePath()
+		if err != nil {
+			return err
+		}
+
+		if err := createInventory(inventory_path); err != nil {
+			return err
+		}
 	}
-	os.Exit(0)
-	return
+	return nil
 }

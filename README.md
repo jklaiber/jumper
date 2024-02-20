@@ -71,6 +71,7 @@ all:
           address: 192.168.1.11
           username: foo
           sshagent: True
+          sshagent_forwarding: True
     fileserver:
       hosts:
         fileserver1:
@@ -113,7 +114,7 @@ all:
 ```
 
 ### Encryption
-The whole encryption is done with Ansible Vault (more [here]()).  
+The whole encryption is done with Ansible Vault.  
   
 Through the usage of the same mechanism like Ansible Vault, there is also the possiblity to use `ansible-vault` to edit the inventory file:
 ```

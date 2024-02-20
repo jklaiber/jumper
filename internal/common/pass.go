@@ -39,8 +39,5 @@ func DeleteSecretFromKeyring() {
 
 func SecretAvailableFromKeyring() (available bool) {
 	_, err := keyring.Get(ServiceName, getUsername())
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }

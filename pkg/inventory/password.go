@@ -1,82 +1,46 @@
 package inventory
 
-import "errors"
+import (
+	"fmt"
+)
 
 func (inventory *Inventory) GetPassword(group string, host string) (string, error) {
 	if group != "" {
-		password, err := inventory.getGroupHostPassword(group, host)
-		if err != nil {
-			password, err = inventory.getGroupPassword(group)
-			if err != nil {
-				password, err = inventory.getGlobalPassword()
-				if err != nil {
-					return "", err
-				}
-				return password, nil
-			}
+		if password, err := inventory.getGroupHostPassword(group, host); err == nil {
 			return password, nil
 		}
-		return password, nil
-	}
-	password, err := inventory.getUngroupedHostPassword(host)
-	if err != nil {
-		password, err = inventory.getGlobalPassword()
-		if err != nil {
-			return "", err
+		if password, err := inventory.getGroupPassword(group); err == nil {
+			return password, nil
 		}
+	}
+	if password, err := inventory.getUngroupedHostPassword(host); err == nil {
 		return password, nil
 	}
-	return password, nil
+	return inventory.getGlobalPassword()
 }
 
 func (inventory *Inventory) getGlobalPassword() (string, error) {
-	password := ""
-	if inventory.All.Vars.Password != "" {
-		password = inventory.All.Vars.Password
-	} else {
-		password = inventory.All.Vars.AnsibleSshPASS
-	}
-	if password == "" {
-		return "", errors.New("global password does not exist")
-	}
-	return password, nil
+	return getPasswordFromVars(inventory.All.Vars)
 }
 
 func (inventory *Inventory) getGroupPassword(group string) (string, error) {
-	password := ""
-	if inventory.All.Children[group].Vars.Password != "" {
-		password = inventory.All.Children[group].Vars.Password
-	} else {
-		password = inventory.All.Children[group].Vars.AnsibleSshPASS
-	}
-	if password == "" {
-		return "", errors.New("group password does not exist")
-	}
-	return password, nil
+	return getPasswordFromVars(inventory.All.Children[group].Vars)
 }
 
 func (inventory *Inventory) getGroupHostPassword(group string, host string) (string, error) {
-	password := ""
-	if inventory.All.Children[group].Hosts[host].Password != "" {
-		password = inventory.All.Children[group].Hosts[host].Password
-	} else {
-		password = inventory.All.Children[group].Hosts[host].AnsibleSshPASS
-	}
-	if password == "" {
-		return "", errors.New("host password does not exist")
-	}
-	return password, nil
+	return getPasswordFromVars(inventory.All.Children[group].Hosts[host])
 }
 
 func (inventory *Inventory) getUngroupedHostPassword(host string) (string, error) {
-	password := ""
-	if inventory.All.Hosts[host].Password != "" {
-		password = inventory.All.Hosts[host].Password
-	} else {
-		password = inventory.All.Hosts[host].AnsibleSshPASS
+	return getPasswordFromVars(inventory.All.Hosts[host])
+}
+
+func getPasswordFromVars(vars Vars) (string, error) {
+	if vars.Password != "" {
+		return vars.Password, nil
 	}
-	if password == "" {
-		return "", errors.New("host password does not exist")
+	if vars.AnsibleSshPASS != "" {
+		return vars.AnsibleSshPASS, nil
 	}
-	return password, nil
+	return "", fmt.Errorf("no password found for host")
 }

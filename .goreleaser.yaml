@@ -1,0 +1,56 @@
+project_name: jumper
+
+before:
+  hooks:
+    - go mod tidy
+    - ./scripts/completions.sh
+
+builds:
+  - main: ./jumper/
+    binary: jumper
+    ldflags:
+      - -s -w -X main.build={{.Version}}
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+nfpms:
+  - maintainer: Julian Klaiber <oss@klaibernet.ch>
+    description: Jumper is a simple CLI SSH manager
+    homepage: https://github.com/jklaiber/jumper
+    license: GPL-3
+    formats:
+      - deb
+      - rpm
+      - apk
+    contents:
+      - src: ./completions/jumper.bash
+        dst: /usr/share/bash-completion/completions/jumper
+        file_info:
+          mode: 0644
+      - src: ./completions/jumper.fish
+        dst: /usr/share/fish/vendor_completions.d/jumper.fish
+        file_info:
+          mode: 0644
+      - src: ./completions/jumper.zsh
+        dst: /usr/share/zsh/vendor-completions/_jumper
+        file_info:
+          mode: 0644
+
+brews:
+  - repository:
+      owner: jklaiber
+      name: homewbrew-tap
+    folder: Formula
+    homepage: https://github.com/jklaiber/jumper
+    description: Jumper is a simple CLI SSH manager
+    license: GPL-3
+    test: |
+      system "#{bin}/jumper version"
+    extra_install: |-
+      bash_completion.install "completions/jumper.bash" => "jumper"
+      zsh_completion.install "completions/jumper.zsh" => "_jumper"
+      fish_completion.install "completions/jumper.fish"

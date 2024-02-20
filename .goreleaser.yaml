@@ -44,6 +44,7 @@ brews:
   - repository:
       owner: jklaiber
       name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
     folder: Formula
     homepage: https://github.com/jklaiber/jumper
     description: Jumper is a simple CLI SSH manager

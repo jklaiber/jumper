@@ -3,7 +3,7 @@ package inventory
 import (
 	"fmt"
 
-	"github.com/jklaiber/jumper/pkg/common"
+	"github.com/jklaiber/jumper/internal/common"
 
 	vault "github.com/sosedoff/ansible-vault-go"
 )

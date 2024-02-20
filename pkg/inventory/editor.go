@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/jklaiber/jumper/pkg/common"
+	"github.com/jklaiber/jumper/internal/common"
 	vault "github.com/sosedoff/ansible-vault-go"
 	"gopkg.in/yaml.v2"
 )

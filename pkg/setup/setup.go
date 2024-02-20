@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jklaiber/jumper/pkg/common"
+	"github.com/jklaiber/jumper/internal/common"
+	"github.com/jklaiber/jumper/internal/config"
 	"github.com/manifoldco/promptui"
 	vault "github.com/sosedoff/ansible-vault-go"
 	"gopkg.in/yaml.v2"
@@ -103,13 +104,13 @@ func createConfigFile(inventoryDestination string) error {
 		return fmt.Errorf("could not get home directory")
 	}
 
-	config := ConfigFile{InventoryFilePath: inventoryDestination}
-	data, err := yaml.Marshal(&config)
+	configFile := ConfigFile{InventoryFilePath: inventoryDestination}
+	data, err := yaml.Marshal(&configFile)
 	if err != nil {
 		return fmt.Errorf("could not marshal config file")
 	}
 
-	err = os.WriteFile(home+"/"+common.ConfigurationFileName, data, 0644)
+	err = os.WriteFile(home+"/"+config.ConfigurationFileName, data, 0644)
 	if err != nil {
 		return fmt.Errorf("could not write config file")
 	}
@@ -119,8 +120,8 @@ func createConfigFile(inventoryDestination string) error {
 
 func Setup() error {
 	fmt.Print(logo)
-	fmt.Println("It seems, that jumper is not fully configured")
-	fmt.Println("Please follow the steps to setup jumper")
+	fmt.Println("It seems, that jumper is not fully configured.")
+	fmt.Println("Please follow the steps to setup jumper:")
 	fmt.Println("")
 	if err := confirm("Do you want to configure jumper"); err != nil {
 		return err
@@ -148,7 +149,7 @@ func Setup() error {
 		common.SetSecretInKeyring(secret)
 	}
 	if !common.InventoryFileExists() {
-		if err := common.InitConfig(); err != nil {
+		if err := config.Parse(); err != nil {
 			return err
 		}
 		if err := confirm("Do you want to create a new empty inventory file"); err != nil {

@@ -5,43 +5,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"github.com/jklaiber/jumper/internal/config"
 )
 
-var cfgFile string
-
-func InitConfig() error {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
-
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(".jumper")
-	}
-
-	viper.AutomaticEnv()
-
-	if err := viper.ReadInConfig(); err != nil {
-		return fmt.Errorf("could not read config file: %v", err)
-	}
-
-	return nil
-}
-
-func GetConfigurationFilePath() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("could not get home directory")
-	}
-	return home + "/" + ConfigurationFileName, nil
-}
-
 func ConfigurationFileExists() bool {
-	configurationFilePath, err := GetConfigurationFilePath()
+	configurationFilePath, err := config.GetConfigurationFilePath()
 	if err != nil {
 		return false
 	}
@@ -52,7 +20,7 @@ func ConfigurationFileExists() bool {
 }
 
 func GetInventoryFilePath() (string, error) {
-	inventory_path := viper.GetString(InventoryYamlKey)
+	inventory_path := config.Params.InventoryPath
 	if strings.HasPrefix(inventory_path, "~/") {
 		home, err := os.UserHomeDir()
 		if err != nil {

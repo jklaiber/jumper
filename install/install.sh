@@ -180,6 +180,19 @@ print_banner() {
   printf '\n'
 }
 
+finish_message() {
+  URL="https://github.com/jklaiber/jumper"
+  printf '\n'
+  info "Please follow the steps to use Jumper on your machine:
+    ${BOLD}${UNDERLINE}Setup${NO_COLOR}
+    Jumper will force to setup the application before the first use.
+    Please follow the instructions to setup the application.
+    ${BOLD}${UNDERLINE}Documentation${NO_COLOR}
+    To check out the documentation go to:
+        ${UNDERLINE}${BLUE}${URL}${NO_COLOR}
+  "
+}
+
 print_banner
 detect_platform_package_manager
 detect_arch

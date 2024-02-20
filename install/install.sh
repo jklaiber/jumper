@@ -10,11 +10,8 @@
 #   -f, -y, --force, --yes
 #     Skip the confirmation prompt during installation
 #
-#   -c, --configuration-dir
-#     Override the bin installation directory
-#
 #   Example:
-#     sh install.sh -i ens2 -y
+#     sh install.sh -y
 
 set -eu
 printf '\n'
@@ -77,118 +74,92 @@ confirm() {
   fi
 }
 
-detect_platform() {
-  if has uname; then
-    PLATFORM="$(uname -s | tr '[:upper:]' '[:lower:]')"
-  elif has os; then
-    PLATFORM="$(os | tr '[:upper:]' '[:lower:]')"
+detect_platform_package_manager() {
+  if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    case $ID in
+      debian|ubuntu) PACKAGE_MANAGER="apt";;
+      fedora|centos|rhel) PACKAGE_MANAGER="rpm";;
+      alpine) PACKAGE_MANAGER="apk";;
+      *) error "Unsupported OS for this installation script"; exit 1;;
+    esac
   else
-    error 'Unable to detect platform'
+    error 'Unable to detect OS or package manager'
     exit 1
   fi
 }
 
 detect_arch() {
-  if has uname; then
-    ARCH="$(uname -m | tr '[:upper:]' '[:lower:]')"
-  elif has arch; then
-    ARCH="$(arch | tr '[:upper:]' '[:lower:]')"
-  else
-    error 'Unable to detect architecture'
+  ARCH=$(uname -m)
+  case $ARCH in
+    x86_64) ARCH="amd64";;
+    armv7l|armv6l) ARCH="arm";;
+    aarch64) ARCH="arm64";;
+    *) error "Unsupported architecture: $ARCH"; exit 1;;
+  esac
+}
+
+fetch_latest_version() {
+  VERSION=$(curl -s https://api.github.com/repos/jklaiber/jumper/releases/latest | grep 'tag_name' | cut -d\" -f4)
+  if [ -z "$VERSION" ]; then
+    error "Unable to fetch latest version"
     exit 1
   fi
-  if [ "$ARCH" = "x86_64" ]; then
-    ARCH='amd64'
+  # Strip the 'v' prefix from version tag if present
+  VERSION=${VERSION#v}
+}
+
+download_and_install() {
+  local base_url="https://github.com/jklaiber/jumper/releases/download/v${VERSION}"
+  local package_format
+  local package_name="jumper_${VERSION}_linux_${ARCH}"
+
+  case $PACKAGE_MANAGER in
+    apt) package_format=".deb";;
+    rpm) package_format=".rpm";;
+    apk) package_format=".apk";;
+  esac
+
+  local url="${base_url}/${package_name}${package_format}"
+
+  temp_dir=$(mktemp -d)
+  cd "$temp_dir"
+
+  info "Downloading ${package_name}${package_format}..."
+  if ! curl -LO "$url"; then
+    error "Failed to download ${package_name}${package_format}"
+    exit 1
   fi
+
+  info "Installing ${package_name}${package_format}..."
+  case $PACKAGE_MANAGER in
+    apt)
+      sudo apt install "./${package_name}${package_format}" -y
+      ;;
+    rpm)
+      sudo rpm -i "${package_name}${package_format}"
+      ;;
+    apk)
+      sudo apk add --allow-untrusted "${package_name}${package_format}"
+      ;;
+  esac
+
+  cd - > /dev/null
+  rm -rf "$temp_dir"
+
+  completed "Jumper installed successfully."
 }
 
-remove_old_binary() {
-  local path="${HOME}/.local/bin/jumper"
-  if test -f ${path}
-  then
-    info "Removing old jumper binary..."
-    rm ${path}
-    completed "Old jumper binary is removed"
-  fi
-}
-
-install_binary () {
-  info "Install jumper binary..."
-  printf '\n'
-
-  $(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/jklaiber/jumper/releases \
-  | grep "browser_download_url" \
-  | grep "$PLATFORM-$ARCH.tar.gz" \
-  | head -n 1 \
-  | cut -d : -f 2,3 \
-  | tr -d \" \
-  | wget -O ${HOME}/.local/bin/jumper.tar.gz -qi -)
-  cd ${HOME}/.local/bin
-  tar xfvz jumper.tar.gz
-  rm -f jumper.tar.gz
-  printf '\n'
-  completed "Jumper binary installed"
-}
-
-install() {
-  printf '\n'
-  install_binary
-}
-
-print_banner() {
-  printf '%s\n' \
-  '    _                                 '\
-  '   (_)                                '\
-  '    _ _   _ _ __ ___  _ __   ___ _ __ '\
-  '   | | | | |  _   _ \|  _ \ / _ \  __|'\
-  '   | | |_| | | | | | | |_) |  __/ |   '\
-  '   | |\__ _|_| |_| |_|  __/ \___|_|   '\
-  '  _/ |               | |              '\
-  ' |__/                |_|              '
-  printf '\n'
-}
-
-start_message() {
-  detect_platform
-  detect_arch
-  info "${BOLD}Detected platform${NO_COLOR}: ${GREEN}${PLATFORM}${NO_COLOR}"
-  info "${BOLD}Detected architecture${NO_COLOR}: ${GREEN}${ARCH}${NO_COLOR}"
-  printf '\n'
-  confirm "Install Jumper SSH CLI Manager?"
-  if has jumper; then
-    info "Jumper is already installed, upgrading..."
-    remove_old_binary
-    install_binary
-    printf '\n'
-    completed "Jumper is upgraded"
-  else
-    install
-    printf '\n'
-    completed "Jumper is installed"
-  fi
-}
-
-finish_message() {
-  URL="https://github.com/jklaiber/jumper"
-
-  printf '\n'
-  info "Please follow the steps to use Jumper on your machine:
-    ${BOLD}${UNDERLINE}Setup${NO_COLOR}
-    Jumper will force to setup the application before the first use.
-    Please follow the instructions to setup the application.
-    ${BOLD}${UNDERLINE}Documentation${NO_COLOR}
-    To check out the documentation go to:
-        ${UNDERLINE}${BLUE}${URL}${NO_COLOR}
-  "
-}
-
-while getopts "hf" option; do
+while getopts "hfyV" option; do
   case $option in
     h)
       help
       exit;;
-    f)
+    f|y)
       FORCE=1
+      ;;
+    V)
+      VERBOSE=1
       ;;
     ?)
       error "Invalid option: -$OPTARG"
@@ -196,6 +167,23 @@ while getopts "hf" option; do
   esac
 done
 
+print_banner() {
+  printf '%s\n' \
+    '    _                                 '\
+    '   (_)                                '\
+    '    _ _   _ _ __ ___  _ __   ___ _ __ '\
+    '   | | | | |  _   _ \|  _ \ / _ \  __|'\
+    '   | | |_| | | | | | | |_) |  __/ |   '\
+    '   | |\__ _|_| |_| |_|  __/ \___|_|   '\
+    '  _/ |               | |              '\
+    ' |__/                |_|              '
+  printf '\n'
+}
+
 print_banner
-start_message
+detect_platform_package_manager
+detect_arch
+fetch_latest_version
+confirm "Install Jumper SSH CLI Manager?"
+download_and_install
 finish_message

@@ -4,10 +4,21 @@ Jumper is a simple and fast cli ssh manager. The goal was to reuse some ideas li
 
 ## Installation
 
+### With Homebrew
+You can use the following command to install Jumper to your system:
+```
+brew install jklaiber/tap/jumper
+```
+
+### With curl
+
 You can use the following command to install Jumper to your system:
 ```
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/jklaiber/jumper/main/install/install.sh)"
 ```
+
+### Manually
+You can also download the latest release from the [release page](https://github.com/jklaiber/jumper/releases) and install it manually.
 
 ## Usage
 The tool can be used to connect over ssh to the saved hosts in the inventory.   

@@ -43,7 +43,7 @@ nfpms:
 brews:
   - repository:
       owner: jklaiber
-      name: homewbrew-tap
+      name: homebrew-tap
     folder: Formula
     homepage: https://github.com/jklaiber/jumper
     description: Jumper is a simple CLI SSH manager

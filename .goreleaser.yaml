@@ -55,3 +55,12 @@ brews:
       bash_completion.install "completions/jumper.bash" => "jumper"
       zsh_completion.install "completions/jumper.zsh" => "_jumper"
       fish_completion.install "completions/jumper.fish"
+
+archives:
+  - builds_info:
+      group: root
+      owner: root
+    files:
+      - README.md
+      - LICENSE.md
+      - completions/*

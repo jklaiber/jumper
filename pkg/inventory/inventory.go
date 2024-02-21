@@ -1,11 +1,5 @@
 package inventory
 
-import (
-	"fmt"
-
-	"gopkg.in/yaml.v2"
-)
-
 type Inventory struct {
 	All HostInventory `yaml:"all"`
 }
@@ -34,39 +28,34 @@ type Vars struct {
 	Port               int    `yaml:"port,omitempty"`
 }
 
-func NewInventory(filePath string) (inventory Inventory, err error) {
-	inventory = Inventory{}
-	str, err := inventory.readEncryptedFile(filePath)
-	if err != nil {
-		return inventory, fmt.Errorf("inventory file could not be read")
+func DefaultInventory() Inventory {
+	return Inventory{
+		All: HostInventory{
+			Hosts: map[string]Vars{
+				"ungroupedhost1": {},
+				"ungroupedhost2": {},
+			},
+			Children: map[string]ChildrenGroup{
+				"webservers": {
+					Hosts: map[string]Vars{
+						"webserver1": {Address: "webserver1.example.com"},
+						"webserver2": {Address: "webserver2.example.com"},
+					},
+					Vars: Vars{Username: "foo", Password: "bar"},
+				},
+				"dbservers": {
+					Hosts: map[string]Vars{
+						"dbserver1": {Address: "192.168.1.10", Username: "foo", Password: "bar"},
+						"dbserver2": {Address: "192.168.1.11", Username: "foo", SshAgent: true, SshAgentForwarding: true},
+					},
+				},
+				"fileserver": {
+					Hosts: map[string]Vars{
+						"fileserver1": {},
+					},
+				},
+			},
+			Vars: Vars{SshKey: "/home/user/.ssh/id_rsa", Username: "globalusername"},
+		},
 	}
-	err = yaml.Unmarshal([]byte(str), &inventory)
-	if err != nil {
-		return inventory, fmt.Errorf("inventory could not be unmarshalled")
-	}
-	return
-}
-
-func (inventory *Inventory) GetUngroupedHosts() []string {
-	var ungroupedHosts []string
-	for key := range inventory.All.Hosts {
-		ungroupedHosts = append(ungroupedHosts, key)
-	}
-	return ungroupedHosts
-}
-
-func (inventory *Inventory) GetGroups() []string {
-	var groups []string
-	for key := range inventory.All.Children {
-		groups = append(groups, key)
-	}
-	return groups
-}
-
-func (inventory *Inventory) GetGroupHosts(group string) []string {
-	var groupHosts []string
-	for key := range inventory.All.Children[group].Hosts {
-		groupHosts = append(groupHosts, key)
-	}
-	return groupHosts
 }

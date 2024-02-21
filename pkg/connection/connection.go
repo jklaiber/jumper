@@ -8,43 +8,21 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/jklaiber/jumper/pkg/inventory"
+	"github.com/jklaiber/jumper/pkg/access"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/term"
 )
 
 type Connection struct {
-	accessConfig *inventory.AccessConfig
+	accessConfig *access.AccessConfig
 	sshConfig    *ssh.ClientConfig
 }
 
-func NewConnection(accessConfig *inventory.AccessConfig) (*Connection, error) {
-	sshConfig := &ssh.ClientConfig{
-		User:            accessConfig.Username,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Auth:            []ssh.AuthMethod{},
-	}
-
-	if accessConfig.Password != "" {
-		sshConfig.Auth = append(sshConfig.Auth, ssh.Password(accessConfig.Password))
-	}
-
-	if accessConfig.SshKey != "" {
-		parsedKey, err := PublicKeyFile(accessConfig.SshKey)
-		if err != nil {
-			return nil, fmt.Errorf("could not read SSH key: %v", err)
-		}
-		sshConfig.Auth = append(sshConfig.Auth, parsedKey)
-	}
-
-	if accessConfig.SshAgent {
-		agentAuth, err := SSHAgent()
-		if err != nil {
-			log.Printf("SSH agent error: %v", err)
-		} else {
-			sshConfig.Auth = append(sshConfig.Auth, agentAuth)
-		}
+func NewConnection(accessConfig *access.AccessConfig) (*Connection, error) {
+	sshConfig, err := accessConfig.BuildClientConfig()
+	if err != nil {
+		return nil, fmt.Errorf("could not build SSH client config: %v", err)
 	}
 
 	return &Connection{

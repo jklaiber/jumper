@@ -1,4 +1,4 @@
-package inventory
+package editor
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func (inventory *Inventory) EditInventory(filePath string) error {
+func EditInventory(filePath string) error {
 	secret := secret.GetSecretFromKeyring()
 
 	decryptedContents, err := vault.DecryptFile(filePath, secret)

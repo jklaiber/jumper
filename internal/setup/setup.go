@@ -1,11 +1,13 @@
-package config
+package setup
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/jklaiber/jumper/internal/common"
+	"github.com/jklaiber/jumper/internal/config"
 	"github.com/jklaiber/jumper/internal/secret"
+	"github.com/jklaiber/jumper/pkg/inventory"
 	"github.com/manifoldco/promptui"
 	vault "github.com/sosedoff/ansible-vault-go"
 	"gopkg.in/yaml.v2"
@@ -84,13 +86,19 @@ func promptInventoryDestination() (destination string, err error) {
 }
 
 func createInventory(inventoryDestination string) error {
+	defaultInventory := inventory.DefaultInventory()
+	content, err := yaml.Marshal(&defaultInventory)
+	if err != nil {
+		return fmt.Errorf("could not marshal default inventory")
+	}
+
 	file, err := os.OpenFile(inventoryDestination, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
 		return fmt.Errorf("could not create inventory file")
 	}
 	defer file.Close()
 
-	err = vault.EncryptFile(inventoryDestination, "", secret.GetSecretFromKeyring())
+	err = vault.EncryptFile(inventoryDestination, string(content), secret.GetSecretFromKeyring())
 	if err != nil {
 		return fmt.Errorf("could not encrypt inventory file")
 	}
@@ -126,7 +134,7 @@ func Setup() error {
 	if err := confirm("Do you want to configure jumper"); err != nil {
 		return err
 	}
-	if !ConfigurationFileExists() {
+	if !config.ConfigurationFileExists() {
 		if err := confirm("Do you want to create a new configuration file"); err != nil {
 			return err
 		}
@@ -148,15 +156,15 @@ func Setup() error {
 		}
 		secret.SetSecretInKeyring(s)
 	}
-	if !InventoryFileExists() {
-		if err := Parse(); err != nil {
+	if !config.InventoryFileExists() {
+		if err := config.Parse(); err != nil {
 			return err
 		}
 		if err := confirm("Do you want to create a new empty inventory file"); err != nil {
 			return err
 		}
 
-		inventory_path, err := GetInventoryFilePath()
+		inventory_path, err := config.GetInventoryFilePath()
 		if err != nil {
 			return err
 		}
@@ -165,5 +173,10 @@ func Setup() error {
 			return err
 		}
 	}
+
+	if err := confirm("Jumper is now configured. Do you want to continue"); err != nil {
+		os.Exit(0)
+	}
+
 	return nil
 }

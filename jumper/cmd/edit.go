@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/jklaiber/jumper/internal/config"
+	"github.com/jklaiber/jumper/pkg/editor"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var editCmd = &cobra.Command{
@@ -16,11 +16,14 @@ var editCmd = &cobra.Command{
 var editInvCmd = &cobra.Command{
 	Use:   "inventory",
 	Short: "Edit inventory file",
-	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.Initialize(); err != nil {
-			log.Fatalf("could not initialize jumper: %v", err)
+	PreRun: func(cmd *cobra.Command, args []string) {
+		err := config.Parse()
+		if err != nil {
+			log.Fatalf("could not initialize config: %v", err)
 		}
-		err := config.Inv.EditInventory(viper.GetString("inventory_file"))
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		err := editor.EditInventory(config.Params.InventoryPath)
 		if err != nil {
 			log.Fatal(err)
 		}

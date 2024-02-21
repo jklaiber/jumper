@@ -1,4 +1,4 @@
-package connection
+package access
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ func parsePrivateKeyWithPassphrase(file string, buffer []byte) (ssh.AuthMethod, 
 	return ssh.PublicKeys(key), nil
 }
 
-func PublicKeyFile(file string) (ssh.AuthMethod, error) {
+func publicKeyFile(file string) (ssh.AuthMethod, error) {
 	buffer, err := os.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("error reading private key: %v", err)

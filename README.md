@@ -3,7 +3,7 @@
     <br>
 	<img src="https://img.shields.io/github/v/tag/jklaiber/jumper.svg?label=release&logo=github&style=flat-square">
     <img src="https://img.shields.io/badge/go%20report-A+-brightgreen.svg?style=flat-square">
-	<!-- <img src="https://img.shields.io/github/actions/workflow/status/jklaiber/jumper/test-go.yaml?branch=main&logo=github&style=flat-square&label=tests"> -->
+	<img src="https://img.shields.io/github/actions/workflow/status/jklaiber/jumper/test-go.yaml?branch=main&logo=github&style=flat-square&label=tests">
 	<img src="https://img.shields.io/github/actions/workflow/status/jklaiber/jumper/lint-go.yaml?branch=main&logo=github&style=flat-square&label=checks">
 </p>
 

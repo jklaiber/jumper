@@ -40,7 +40,7 @@ func DefaultInventory() Inventory {
 						"webserver1": {Address: "webserver1.example.com", SshKey: "/home/user/.ssh/id_ecdsa"},
 						"webserver2": {Address: "webserver2.example.com", Port: 2222},
 					},
-					Vars: Vars{Username: "foo", Password: "bar"},
+					Vars: Vars{Username: "foo", Password: "bar", SshKey: "/home/user/.ssh/group_id_rsa"},
 				},
 				"dbservers": {
 					Hosts: map[string]Vars{

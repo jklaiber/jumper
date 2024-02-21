@@ -30,6 +30,12 @@ func TestInventoryService_GetHostSSHKey(t *testing.T) {
 			wantErr:   false,
 		},
 		{
+			groupName: "webservers",
+			hostName:  "webserver2",
+			want:      "/home/user/.ssh/group_id_rsa",
+			wantErr:   false,
+		},
+		{
 			groupName: "dbservers",
 			hostName:  "dbserver1",
 			want:      "/home/user/.ssh/id_rsa",

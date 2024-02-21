@@ -1,46 +1,50 @@
 package inventory
 
-import (
-	"fmt"
-)
+import "fmt"
 
-func (inventory *Inventory) GetUsername(group string, host string) (string, error) {
-	if group != "" {
-		if username, err := inventory.getGroupHostUsername(group, host); err == nil {
+func (s *InventoryService) GetHostUsername(groupName, hostName string) (string, error) {
+	if groupName == "" {
+		if hostVars, exists := s.Inventory.All.Hosts[hostName]; exists {
+			if username := getUsernameFromVars(hostVars); username != "" {
+				return username, nil
+			}
+			username := getUsernameFromVars(s.Inventory.All.Vars)
+			if username != "" {
+				return username, nil
+			}
+			return "", fmt.Errorf("no username found for host")
+		} else {
+			return "", fmt.Errorf("host not found")
+		}
+	}
+
+	if _, exists := s.Inventory.All.Children[groupName]; !exists {
+		return "", fmt.Errorf("group not found")
+	}
+
+	if hostVars, exists := s.Inventory.All.Children[groupName].Hosts[hostName]; exists {
+		if username := getUsernameFromVars(hostVars); username != "" {
 			return username, nil
 		}
-		if username, err := inventory.getGroupUsername(group); err == nil {
+		if username := getUsernameFromVars(s.Inventory.All.Children[groupName].Vars); username != "" {
 			return username, nil
 		}
 	}
-	if username, err := inventory.getUngroupedHostUsername(host); err == nil {
+
+	username := getUsernameFromVars(s.Inventory.All.Vars)
+	if username != "" {
 		return username, nil
 	}
-	return inventory.getGlobalUsername()
+
+	return "", fmt.Errorf("no username found for host")
 }
 
-func (inventory *Inventory) getGlobalUsername() (string, error) {
-	return getUsernameFromVars(inventory.All.Vars)
-}
-
-func (inventory *Inventory) getGroupUsername(group string) (string, error) {
-	return getUsernameFromVars(inventory.All.Children[group].Vars)
-}
-
-func (inventory *Inventory) getGroupHostUsername(group string, host string) (string, error) {
-	return getUsernameFromVars(inventory.All.Children[group].Hosts[host])
-}
-
-func (inventory *Inventory) getUngroupedHostUsername(host string) (string, error) {
-	return getUsernameFromVars(inventory.All.Hosts[host])
-}
-
-func getUsernameFromVars(vars Vars) (string, error) {
+func getUsernameFromVars(vars Vars) string {
 	if vars.Username != "" {
-		return vars.Username, nil
+		return vars.Username
 	}
 	if vars.AnsibleUser != "" {
-		return vars.AnsibleUser, nil
+		return vars.AnsibleUser
 	}
-	return "", fmt.Errorf("no username found for host")
+	return ""
 }

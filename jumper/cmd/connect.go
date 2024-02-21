@@ -3,7 +3,6 @@ package cmd
 import (
 	"log"
 
-	"github.com/jklaiber/jumper/internal/config"
 	"github.com/jklaiber/jumper/pkg/connection"
 	"github.com/spf13/cobra"
 )
@@ -21,18 +20,13 @@ var connectCmd = &cobra.Command{
 	Short: "Connect to a saved connection",
 	Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.Initialize(); err != nil {
-			log.Fatalf("could not initialize jumper: %v", err)
-		}
-
-		accessConfig, err := config.Inv.GetAccessConfig(Group, args[0])
+		accessConfig, err := invService.GetAccessConfig(Group, args[0])
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not get access config: %v", err)
 		}
-
 		connection, err := connection.NewConnection(accessConfig)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not create connection: %v", err)
 		}
 		connection.Start()
 	},
@@ -41,9 +35,19 @@ var connectCmd = &cobra.Command{
 
 func UngroupedHostGet(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if Group == "" {
-		return config.Inv.GetUngroupedHosts(), cobra.ShellCompDirectiveNoFileComp
+		hostDetails := invService.GetUngroupedHosts()
+		hosts := make([]string, len(hostDetails))
+		for i, host := range hostDetails {
+			hosts[i] = host.Name
+		}
+		return hosts, cobra.ShellCompDirectiveNoFileComp
 	}
-	return config.Inv.GetGroupHosts(Group), cobra.ShellCompDirectiveNoFileComp
+	hostDetails := invService.GetGroupHosts(Group)
+	hosts := make([]string, len(hostDetails))
+	for i, host := range hostDetails {
+		hosts[i] = host.Name
+	}
+	return hosts, cobra.ShellCompDirectiveNoFileComp
 }
 
 func init() {
@@ -51,8 +55,18 @@ func init() {
 
 	connectCmd.Flags().StringVarP(&Group, groupFlagName, groupFlagNameShort, "", groupFlagDescription)
 	if err := connectCmd.RegisterFlagCompletionFunc(groupFlagName, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return config.Inv.GetGroups(), cobra.ShellCompDirectiveDefault
+		groups := getGroupsAsSlice()
+		return groups, cobra.ShellCompDirectiveDefault
 	}); err != nil {
 		log.Fatalf("could not register flag completion: %v", err)
 	}
+}
+
+func getGroupsAsSlice() []string {
+	groupDetails := invService.GetGroups()
+	groups := make([]string, len(groupDetails))
+	for i, group := range groupDetails {
+		groups[i] = group.Name
+	}
+	return groups
 }

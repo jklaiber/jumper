@@ -1,10 +1,15 @@
 package cmd
 
 import (
+	"log"
+	"os"
+
+	"github.com/jklaiber/jumper/internal/setup"
+	"github.com/jklaiber/jumper/pkg/inventory"
 	"github.com/spf13/cobra"
 )
 
-// var Inv inventory.Inventory
+var invService inventory.InventoryManager
 
 var rootCmd = &cobra.Command{
 	Use:   "jumper",
@@ -15,28 +20,14 @@ func Execute() {
 	cobra.CheckErr(rootCmd.Execute())
 }
 
-// func init() {
-// 	err := config.Parse()
-// 	if err != nil {
-// 		log.Fatalf("could not initialize config: %v", err)
-// 	}
-
-// 	if !common.IsConfigured() {
-// 		if err := setup.Setup(); err != nil {
-// 			log.Fatalf("could not setup jumper: %v", err)
-// 		}
-// 	}
-// 	cobra.OnInitialize(initInventory)
-// }
-
-// func initInventory() {
-// 	inventoryFile, err := common.GetInventoryFilePath()
-// 	if err != nil {
-// 		log.Fatalf("could not get inventory file path")
-// 	}
-// 	inventory, err := inventory.NewInventory(inventoryFile)
-// 	if err != nil {
-// 		log.Fatalf("could not create inventory")
-// 	}
-// 	inv = inventory
-// }
+func init() {
+	if os.Getenv("JUMPER_SKIP_INV_INIT") == "" {
+		invReader := inventory.DefaultInventoryReader{}
+		invParser := inventory.DefaultInventoryParser{}
+		inv, err := setup.Initialize(&invReader, &invParser)
+		if err != nil {
+			log.Fatalf("could not initialize jumper: %v", err)
+		}
+		invService = inv
+	}
+}

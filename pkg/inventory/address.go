@@ -1,31 +1,35 @@
 package inventory
 
-import (
-	"fmt"
-)
+import "fmt"
 
-func (inventory *Inventory) GetAddress(group string, host string) (string, int, error) {
-	if group != "" {
-		return inventory.getGroupHostAddress(group, host)
+func (s *InventoryService) GetHostAddress(groupName, hostName string) (string, error) {
+	if groupName == "" {
+		if hostVars, exists := s.Inventory.All.Hosts[hostName]; exists {
+			address, err := getAddressFromVars(hostVars)
+			if err != nil {
+				return "", err
+			}
+			return address, nil
+		}
 	}
-	return inventory.getUngroupedHostAddress(host)
+
+	if hostVars, exists := s.Inventory.All.Children[groupName].Hosts[hostName]; exists {
+		address, err := getAddressFromVars(hostVars)
+		if err != nil {
+			return "", err
+		}
+		return address, nil
+	}
+
+	return "", fmt.Errorf("no address found for host")
 }
 
-func (inventory *Inventory) getGroupHostAddress(group string, host string) (string, int, error) {
-	return inventory.getHostAddress(inventory.All.Children[group].Hosts[host])
-}
-
-func (inventory *Inventory) getUngroupedHostAddress(host string) (string, int, error) {
-	return inventory.getHostAddress(inventory.All.Hosts[host])
-}
-
-func (inventory *Inventory) getHostAddress(vars Vars) (string, int, error) {
-	address := vars.Address
-	if address == "" {
-		address = vars.AnsibleHost
+func getAddressFromVars(vars Vars) (string, error) {
+	if vars.Address != "" {
+		return vars.Address, nil
 	}
-	if address == "" {
-		return "", 0, fmt.Errorf("no address found for host")
+	if vars.AnsibleHost != "" {
+		return vars.AnsibleHost, nil
 	}
-	return address, vars.Port, nil
+	return "", fmt.Errorf("no address found for host")
 }

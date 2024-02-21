@@ -1,6 +1,17 @@
 ![jumper logo](doc/jumper_logo.png)
+<p align="center">
+    <br>
+	<img src="https://img.shields.io/github/v/tag/jklaiber/jumper.svg?label=release&logo=github&style=flat-square">
+    <img src="https://img.shields.io/badge/go%20report-A+-brightgreen.svg?style=flat-square">
+	<img src="https://img.shields.io/github/actions/workflow/status/jklaiber/jumper/test-go.yaml?branch=main&logo=github&style=flat-square&label=tests">
+	<img src="https://img.shields.io/github/actions/workflow/status/jklaiber/jumper/lint-go.yaml?branch=main&logo=github&style=flat-square&label=checks">
+</p>
 
+<p align="center">
 Jumper is a simple and fast cli ssh manager. The goal was to reuse some ideas like the Ansible YAML inventory and Ansible Vault.
+</p>
+
+---
 
 ## Installation
 

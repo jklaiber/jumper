@@ -2,78 +2,58 @@ package inventory
 
 import "fmt"
 
-func (inventory *Inventory) GetSshAgent(group string, host string) (bool, error) {
-	if group != "" {
-		if sshagent, err := inventory.getGroupHostSshAgent(group, host); err == nil {
-			return sshagent, nil
-		}
-		if sshagent, err := inventory.getGroupSshAgent(group); err == nil {
-			return sshagent, nil
-		}
-	}
-	if sshagent, err := inventory.getUngroupedHostSshAgent(host); err == nil {
-		return sshagent, nil
-	}
-	return inventory.getGlobalSshAgent()
-}
-
-func (inventory *Inventory) getGlobalSshAgent() (bool, error) {
-	return getSshAgentFromVars(inventory.All.Vars)
-}
-
-func (inventory *Inventory) getGroupSshAgent(group string) (bool, error) {
-	return getSshAgentFromVars(inventory.All.Children[group].Vars)
-}
-
-func (inventory *Inventory) getGroupHostSshAgent(group string, host string) (bool, error) {
-	return getSshAgentFromVars(inventory.All.Children[group].Hosts[host])
-}
-
-func (inventory *Inventory) getUngroupedHostSshAgent(host string) (bool, error) {
-	return getSshAgentFromVars(inventory.All.Hosts[host])
-}
-
-func getSshAgentFromVars(vars Vars) (bool, error) {
-	if vars.SshAgent {
-		return vars.SshAgent, nil
-	}
-	return false, fmt.Errorf("ssh agent not enabled")
-}
-
-func (inventory *Inventory) GetSshAgentForwarding(group string, host string) (bool, error) {
-	if group != "" {
-		if sshagentforwarding, err := inventory.getGroupHostSshAgentForwarding(group, host); err == nil {
-			return sshagentforwarding, nil
-		}
-		if sshagentforwarding, err := inventory.getGroupSshAgentForwarding(group); err == nil {
-			return sshagentforwarding, nil
+func (s *InventoryService) GetHostSSHAgent(groupName, hostName string) (bool, error) {
+	if groupName == "" {
+		if hostVars, exists := s.Inventory.All.Hosts[hostName]; exists {
+			if sshAgent := getSSHAgentFromVars(hostVars); sshAgent {
+				return true, nil
+			}
+			return getSSHAgentFromVars(s.Inventory.All.Vars), nil
+		} else {
+			return false, fmt.Errorf("host not found")
 		}
 	}
-	if sshagentforwarding, err := inventory.getUngroupedHostSshAgentForwarding(host); err == nil {
-		return sshagentforwarding, nil
+	if hostVars, exists := s.Inventory.All.Children[groupName].Hosts[hostName]; exists {
+		if sshAgent := getSSHAgentFromVars(hostVars); sshAgent {
+			return true, nil
+		}
+		if sshAgent := getSSHAgentFromVars(s.Inventory.All.Children[groupName].Vars); sshAgent {
+			return true, nil
+		}
+		return getSSHAgentFromVars(s.Inventory.All.Vars), nil
+	} else {
+		return false, fmt.Errorf("host not found")
 	}
-	return inventory.getGlobalSshAgentForwarding()
 }
 
-func (inventory *Inventory) getGlobalSshAgentForwarding() (bool, error) {
-	return getSshAgentForwardingFromVars(inventory.All.Vars)
+func getSSHAgentFromVars(vars Vars) bool {
+	return vars.SshAgent
 }
 
-func (inventory *Inventory) getGroupSshAgentForwarding(group string) (bool, error) {
-	return getSshAgentForwardingFromVars(inventory.All.Children[group].Vars)
-}
-
-func (inventory *Inventory) getGroupHostSshAgentForwarding(group string, host string) (bool, error) {
-	return getSshAgentForwardingFromVars(inventory.All.Children[group].Hosts[host])
-}
-
-func (inventory *Inventory) getUngroupedHostSshAgentForwarding(host string) (bool, error) {
-	return getSshAgentForwardingFromVars(inventory.All.Hosts[host])
-}
-
-func getSshAgentForwardingFromVars(vars Vars) (bool, error) {
-	if vars.SshAgentForwarding {
-		return vars.SshAgentForwarding, nil
+func (s *InventoryService) GetHostSSHAgentForwarding(groupName, hostName string) (bool, error) {
+	if groupName == "" {
+		if hostVars, exists := s.Inventory.All.Hosts[hostName]; exists {
+			if sshAgentForwarding := getSSHAgentForwardingFromVars(hostVars); sshAgentForwarding {
+				return true, nil
+			}
+			return getSSHAgentForwardingFromVars(s.Inventory.All.Vars), nil
+		} else {
+			return false, fmt.Errorf("host not found")
+		}
 	}
-	return false, fmt.Errorf("ssh agent forwarding not enabled")
+	if hostVars, exists := s.Inventory.All.Children[groupName].Hosts[hostName]; exists {
+		if sshAgentForwarding := getSSHAgentForwardingFromVars(hostVars); sshAgentForwarding {
+			return true, nil
+		}
+		if sshAgentForwarding := getSSHAgentForwardingFromVars(s.Inventory.All.Children[groupName].Vars); sshAgentForwarding {
+			return true, nil
+		}
+		return getSSHAgentForwardingFromVars(s.Inventory.All.Vars), nil
+	} else {
+		return false, fmt.Errorf("host not found")
+	}
+}
+
+func getSSHAgentForwardingFromVars(vars Vars) bool {
+	return vars.SshAgentForwarding
 }

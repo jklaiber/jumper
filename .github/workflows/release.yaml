@@ -9,6 +9,9 @@ permissions:
   contents: write
   packages: write
 
+env:
+  JUMPER_SKIP_INV_INIT: true
+
 jobs:
   goreleaser:
     runs-on: ubuntu-latest

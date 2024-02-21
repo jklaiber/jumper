@@ -1,9 +1,22 @@
+//go:generate mockgen -source=access.go -destination=mocks/access.go -package=mocks Configurator
 package access
 
 import "golang.org/x/crypto/ssh"
 
 type Configurator interface {
 	BuildClientConfig() (*ssh.ClientConfig, error)
+	readSSHKeyPassphrase(file string) ([]byte, error)
+	parsePrivateKeyWithPassphrase(file string, buffer []byte) (ssh.AuthMethod, error)
+	getPublicKeyFile(file string) (ssh.AuthMethod, error)
+	getSshAgent() (ssh.AuthMethod, error)
+	GetUsername() string
+	GetPassword() string
+	GetAddress() string
+	GetPort() int
+	SetPort(int)
+	GetSshKey() string
+	GetSshAgent() bool
+	GetSshAgentForwarding() bool
 }
 
 type AccessConfig struct {
@@ -42,7 +55,7 @@ func (a *AccessConfig) BuildClientConfig() (*ssh.ClientConfig, error) {
 	}
 
 	if a.SshKey != "" {
-		parsedKey, err := publicKeyFile(a.SshKey)
+		parsedKey, err := a.getPublicKeyFile(a.SshKey)
 		if err != nil {
 			return nil, err
 		}
@@ -50,7 +63,7 @@ func (a *AccessConfig) BuildClientConfig() (*ssh.ClientConfig, error) {
 	}
 
 	if a.SshAgent {
-		agentAuth, err := sshAgent()
+		agentAuth, err := a.getSshAgent()
 		if err != nil {
 			return nil, err
 		}
@@ -58,4 +71,36 @@ func (a *AccessConfig) BuildClientConfig() (*ssh.ClientConfig, error) {
 	}
 
 	return sshConfig, nil
+}
+
+func (a *AccessConfig) GetUsername() string {
+	return a.Username
+}
+
+func (a *AccessConfig) GetPassword() string {
+	return a.Password
+}
+
+func (a *AccessConfig) GetAddress() string {
+	return a.Address
+}
+
+func (a *AccessConfig) GetPort() int {
+	return a.Port
+}
+
+func (a *AccessConfig) SetPort(port int) {
+	a.Port = port
+}
+
+func (a *AccessConfig) GetSshKey() string {
+	return a.SshKey
+}
+
+func (a *AccessConfig) GetSshAgent() bool {
+	return a.SshAgent
+}
+
+func (a *AccessConfig) GetSshAgentForwarding() bool {
+	return a.SshAgentForwarding
 }

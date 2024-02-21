@@ -1,3 +1,4 @@
+//go:generate mockgen -source=reader.go -destination=mocks/reader_mock.go -package=mocks InventoryReader
 package inventory
 
 import (

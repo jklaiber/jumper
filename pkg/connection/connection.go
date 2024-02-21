@@ -1,3 +1,4 @@
+//go:generate mockgen -source=connection.go -destination=mocks/connection.go -package=mocks Connection
 package connection
 
 import (
@@ -14,29 +15,34 @@ import (
 	"golang.org/x/term"
 )
 
-type Connection struct {
-	accessConfig *access.AccessConfig
+type Connection interface {
+	Start()
+	runShell(ctx context.Context) error
+}
+
+type SSHConnection struct {
+	accessConfig access.Configurator
 	sshConfig    *ssh.ClientConfig
 }
 
-func NewConnection(accessConfig *access.AccessConfig) (*Connection, error) {
+func NewConnection(accessConfig access.Configurator) (*SSHConnection, error) {
 	sshConfig, err := accessConfig.BuildClientConfig()
 	if err != nil {
 		return nil, fmt.Errorf("could not build SSH client config: %v", err)
 	}
 
-	return &Connection{
+	return &SSHConnection{
 		accessConfig: accessConfig,
 		sshConfig:    sshConfig,
 	}, nil
 }
 
-func (connection *Connection) Start() {
+func (connection *SSHConnection) Start() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 	ctx, cancel := context.WithCancel(context.Background())
 
-	fmt.Printf("Connecting to %s with %s\n\n", connection.accessConfig.Address, connection.accessConfig.Username)
+	fmt.Printf("Connecting to %s with %s\n\n", connection.accessConfig.GetAddress(), connection.accessConfig.GetUsername())
 	go func() {
 		if err := connection.runShell(ctx); err != nil {
 			log.Print(err)
@@ -52,11 +58,11 @@ func (connection *Connection) Start() {
 
 }
 
-func (connection *Connection) runShell(ctx context.Context) error {
-	if connection.accessConfig.Port == 0 {
-		connection.accessConfig.Port = 22
+func (connection *SSHConnection) runShell(ctx context.Context) error {
+	if connection.accessConfig.GetPort() == 0 {
+		connection.accessConfig.SetPort(22)
 	}
-	hostWithPort := fmt.Sprintf("%s:%d", connection.accessConfig.Address, connection.accessConfig.Port)
+	hostWithPort := fmt.Sprintf("%s:%d", connection.accessConfig.GetAddress(), connection.accessConfig.GetPort())
 	conn, err := ssh.Dial("tcp", hostWithPort, connection.sshConfig)
 	if err != nil {
 		log.Fatalf("error: %s", err)
@@ -69,7 +75,7 @@ func (connection *Connection) runShell(ctx context.Context) error {
 	}
 	defer session.Close()
 
-	if connection.accessConfig.SshAgentForwarding {
+	if connection.accessConfig.GetSshAgentForwarding() {
 		if err := agent.ForwardToRemote(conn, os.Getenv("SSH_AUTH_SOCK")); err != nil {
 			return fmt.Errorf("error forwarding to remote: %v", err)
 		}

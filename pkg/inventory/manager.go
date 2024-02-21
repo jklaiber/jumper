@@ -1,3 +1,4 @@
+//go:generate mockgen -source=manager.go -destination=mocks/manager_mock.go -package=mocks InventoryManager
 package inventory
 
 import (

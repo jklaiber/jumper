@@ -8,7 +8,7 @@ import (
 	"golang.org/x/term"
 )
 
-func readSSHKeyPassphrase(file string) ([]byte, error) {
+func (a *AccessConfig) readSSHKeyPassphrase(file string) ([]byte, error) {
 	fmt.Printf("Enter passphrase for key '%s': ", file)
 	passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
 	fmt.Println()
@@ -18,8 +18,8 @@ func readSSHKeyPassphrase(file string) ([]byte, error) {
 	return passphrase, nil
 }
 
-func parsePrivateKeyWithPassphrase(file string, buffer []byte) (ssh.AuthMethod, error) {
-	passphrase, err := readSSHKeyPassphrase(file)
+func (a *AccessConfig) parsePrivateKeyWithPassphrase(file string, buffer []byte) (ssh.AuthMethod, error) {
+	passphrase, err := a.readSSHKeyPassphrase(file)
 	if err != nil {
 		return nil, fmt.Errorf("error reading the passphrase: %v", err)
 	}
@@ -30,7 +30,7 @@ func parsePrivateKeyWithPassphrase(file string, buffer []byte) (ssh.AuthMethod, 
 	return ssh.PublicKeys(key), nil
 }
 
-func publicKeyFile(file string) (ssh.AuthMethod, error) {
+func (a *AccessConfig) getPublicKeyFile(file string) (ssh.AuthMethod, error) {
 	buffer, err := os.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("error reading private key: %v", err)
@@ -38,7 +38,7 @@ func publicKeyFile(file string) (ssh.AuthMethod, error) {
 	key, err := ssh.ParsePrivateKey(buffer)
 	if err != nil {
 		if _, ok := err.(*ssh.PassphraseMissingError); ok {
-			return parsePrivateKeyWithPassphrase(file, buffer)
+			return a.parsePrivateKeyWithPassphrase(file, buffer)
 		}
 		return nil, fmt.Errorf("error parsing private key: %v", err)
 	}

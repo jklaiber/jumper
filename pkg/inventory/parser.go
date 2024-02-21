@@ -1,3 +1,4 @@
+//go:generate mockgen -source=parser.go -destination=mocks/parser_mock.go -package=mocks InventoryParser
 package inventory
 
 import (

@@ -21,13 +21,13 @@ type InventoryManager interface {
 	GetUngroupedHosts() []HostDetail
 	GetGroups() []GroupDetail
 	GetGroupHosts(group string) []HostDetail
-	GetHostSSHAgent(groupName, hostName string) bool
-	GetHostSSHAgentForwarding(groupName, hostName string) bool
-	GetHostSSHKey(groupName, hostName string) string
+	GetHostSSHAgent(groupName, hostName string) (bool, error)
+	GetHostSSHAgentForwarding(groupName, hostName string) (bool, error)
+	GetHostSSHKey(groupName, hostName string) (string, error)
 	GetHostUsername(groupName, hostName string) (string, error)
-	GetHostPassword(groupName, hostName string) string
+	GetHostPassword(groupName, hostName string) (string, error)
 	GetHostAddress(groupName, hostName string) (string, error)
-	GetHostPort(groupName, hostName string) int
+	GetHostPort(groupName, hostName string) (int, error)
 	GetAccessConfig(groupName, hostName string) (*access.AccessConfig, error)
 }
 

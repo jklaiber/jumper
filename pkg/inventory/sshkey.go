@@ -1,25 +1,30 @@
 package inventory
 
-func (s *InventoryService) GetHostSSHKey(groupName, hostName string) string {
+import "fmt"
+
+func (s *InventoryService) GetHostSSHKey(groupName, hostName string) (string, error) {
 	if groupName == "" {
 		if hostVars, exists := s.Inventory.All.Hosts[hostName]; exists {
 			if sshkey := getSSHKeyFromVars(hostVars); sshkey != "" {
-				return sshkey
+				return sshkey, nil
 			}
-			return getSSHKeyFromVars(s.Inventory.All.Vars)
+			return getSSHKeyFromVars(s.Inventory.All.Vars), nil
+		} else {
+			return "", fmt.Errorf("host not found")
 		}
 	}
 
 	if hostVars, exists := s.Inventory.All.Children[groupName].Hosts[hostName]; exists {
 		if sshkey := getSSHKeyFromVars(hostVars); sshkey != "" {
-			return sshkey
+			return sshkey, nil
 		}
 		if sshkey := getSSHKeyFromVars(s.Inventory.All.Children[groupName].Vars); sshkey != "" {
-			return sshkey
+			return sshkey, nil
 		}
+		return getSSHKeyFromVars(s.Inventory.All.Vars), nil
+	} else {
+		return "", fmt.Errorf("host not found")
 	}
-
-	return getSSHKeyFromVars(s.Inventory.All.Vars)
 }
 
 func getSSHKeyFromVars(vars Vars) string {

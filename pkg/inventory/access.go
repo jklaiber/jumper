@@ -12,15 +12,30 @@ func (s *InventoryService) GetAccessConfig(groupName, hostName string) (*access.
 		return nil, fmt.Errorf("no valid username found")
 	}
 
-	password := s.GetHostPassword(groupName, hostName)
-	sshKey := s.GetHostSSHKey(groupName, hostName)
-	sshAgent := s.GetHostSSHAgent(groupName, hostName)
-	sshAgentForwarding := s.GetHostSSHAgentForwarding(groupName, hostName)
+	password, err := s.GetHostPassword(groupName, hostName)
+	if err != nil {
+		return nil, fmt.Errorf("no valid host found")
+	}
+	sshKey, err := s.GetHostSSHKey(groupName, hostName)
+	if err != nil {
+		return nil, fmt.Errorf("no valid host found")
+	}
+	sshAgent, err := s.GetHostSSHAgent(groupName, hostName)
+	if err != nil {
+		return nil, fmt.Errorf("no valid host found")
+	}
+	sshAgentForwarding, err := s.GetHostSSHAgentForwarding(groupName, hostName)
+	if err != nil {
+		return nil, fmt.Errorf("no valid host found")
+	}
 	address, err := s.GetHostAddress(groupName, hostName)
 	if err != nil {
 		return nil, fmt.Errorf("no valid address found")
 	}
-	port := s.GetHostPort(groupName, hostName)
+	port, err := s.GetHostPort(groupName, hostName)
+	if err != nil {
+		return nil, fmt.Errorf("no valid host found")
+	}
 
 	return access.NewAccessConfig(username, password, address, port, sshKey, sshAgent, sshAgentForwarding), nil
 }

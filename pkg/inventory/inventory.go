@@ -32,14 +32,13 @@ func DefaultInventory() Inventory {
 	return Inventory{
 		All: HostInventory{
 			Hosts: map[string]Vars{
-				"ungroupedhost1": {},
-				"ungroupedhost2": {},
+				"ungroupedhost1": {Address: "ungroupedhost1.example.com", Username: "ungroupedusername", Password: "ungroupedpassword"},
 			},
 			Children: map[string]ChildrenGroup{
 				"webservers": {
 					Hosts: map[string]Vars{
-						"webserver1": {Address: "webserver1.example.com"},
-						"webserver2": {Address: "webserver2.example.com"},
+						"webserver1": {Address: "webserver1.example.com", SshKey: "/home/user/.ssh/id_ecdsa"},
+						"webserver2": {Address: "webserver2.example.com", Port: 2222},
 					},
 					Vars: Vars{Username: "foo", Password: "bar"},
 				},
@@ -47,11 +46,6 @@ func DefaultInventory() Inventory {
 					Hosts: map[string]Vars{
 						"dbserver1": {Address: "192.168.1.10", Username: "foo", Password: "bar"},
 						"dbserver2": {Address: "192.168.1.11", Username: "foo", SshAgent: true, SshAgentForwarding: true},
-					},
-				},
-				"fileserver": {
-					Hosts: map[string]Vars{
-						"fileserver1": {},
 					},
 				},
 			},

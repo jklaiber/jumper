@@ -13,7 +13,13 @@ func (s *InventoryService) GetHostUsername(groupName, hostName string) (string, 
 				return username, nil
 			}
 			return "", fmt.Errorf("no username found for host")
+		} else {
+			return "", fmt.Errorf("host not found")
 		}
+	}
+
+	if _, exists := s.Inventory.All.Children[groupName]; !exists {
+		return "", fmt.Errorf("group not found")
 	}
 
 	if hostVars, exists := s.Inventory.All.Children[groupName].Hosts[hostName]; exists {

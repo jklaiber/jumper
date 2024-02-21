@@ -1,23 +1,29 @@
 package inventory
 
-func (s *InventoryService) GetHostPassword(groupName, hostName string) string {
+import "fmt"
+
+func (s *InventoryService) GetHostPassword(groupName, hostName string) (string, error) {
 	if groupName == "" {
 		if hostVars, exists := s.Inventory.All.Hosts[hostName]; exists {
 			if password := getPasswordFromVars(hostVars); password != "" {
-				return password
+				return password, nil
 			}
-			return getPasswordFromVars(s.Inventory.All.Vars)
+			return getPasswordFromVars(s.Inventory.All.Vars), nil
+		} else {
+			return "", fmt.Errorf("host not found")
 		}
 	}
 	if hostVars, exists := s.Inventory.All.Children[groupName].Hosts[hostName]; exists {
 		if password := getPasswordFromVars(hostVars); password != "" {
-			return password
+			return password, nil
 		}
 		if password := getPasswordFromVars(s.Inventory.All.Children[groupName].Vars); password != "" {
-			return password
+			return password, nil
 		}
+		return getPasswordFromVars(s.Inventory.All.Vars), nil
+	} else {
+		return "", fmt.Errorf("host not found")
 	}
-	return getPasswordFromVars(s.Inventory.All.Vars)
 }
 
 func getPasswordFromVars(vars Vars) string {

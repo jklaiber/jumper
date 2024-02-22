@@ -26,6 +26,8 @@ nfpms:
       - deb
       - rpm
       - apk
+    dependencies:
+      - gnome-keyring
     contents:
       - src: ./completions/jumper.bash
         dst: /usr/share/bash-completion/completions/jumper

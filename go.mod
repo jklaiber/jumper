@@ -9,7 +9,7 @@ require (
 	github.com/spf13/viper v1.18.2
 	github.com/zalando/go-keyring v0.2.3
 	go.uber.org/mock v0.4.0
-	golang.org/x/crypto v0.19.0
+	golang.org/x/crypto v0.20.0
 	golang.org/x/term v0.17.0
 	gopkg.in/yaml.v2 v2.4.0
 )

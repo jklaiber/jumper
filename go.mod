@@ -7,7 +7,7 @@ require (
 	github.com/sosedoff/ansible-vault-go v0.2.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.19.0
-	github.com/zalando/go-keyring v0.2.4
+	github.com/zalando/go-keyring v0.2.5
 	go.uber.org/mock v0.4.0
 	golang.org/x/crypto v0.23.0
 	golang.org/x/term v0.20.0

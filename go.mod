@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/manifoldco/promptui v0.9.0
 	github.com/sosedoff/ansible-vault-go v0.2.0
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/zalando/go-keyring v0.2.5
 	go.uber.org/mock v0.4.0

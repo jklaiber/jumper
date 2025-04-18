@@ -7,7 +7,7 @@ require (
 	github.com/sosedoff/ansible-vault-go v0.2.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
-	github.com/zalando/go-keyring v0.2.5
+	github.com/zalando/go-keyring v0.2.6
 	go.uber.org/mock v0.4.0
 	golang.org/x/crypto v0.31.0
 	golang.org/x/term v0.27.0
@@ -15,9 +15,9 @@ require (
 )
 
 require (
-	github.com/alessio/shellescape v1.4.2 // indirect
+	al.essio.dev/pkg/shellescape v1.5.1 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
-	github.com/danieljoos/wincred v1.2.0 // indirect
+	github.com/danieljoos/wincred v1.2.2 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect

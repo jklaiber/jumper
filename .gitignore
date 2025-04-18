@@ -22,3 +22,5 @@ inventory.yaml
 secure_inventory.yaml
 secure_inventory.yaml.bck
 bash_completion
+# Added by goreleaser init:
+dist/

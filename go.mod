@@ -1,6 +1,7 @@
 module github.com/jklaiber/jumper
 
 go 1.21
+toolchain go1.24.1
 
 require (
 	github.com/manifoldco/promptui v0.9.0
@@ -8,7 +9,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/zalando/go-keyring v0.2.6
-	go.uber.org/mock v0.4.0
+	go.uber.org/mock v0.5.1
 	golang.org/x/crypto v0.31.0
 	golang.org/x/term v0.27.0
 	gopkg.in/yaml.v2 v2.4.0

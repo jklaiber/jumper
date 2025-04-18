@@ -67,13 +67,23 @@ func (connection *SSHConnection) runShell(ctx context.Context) error {
 	if err != nil {
 		log.Fatalf("error: %s", err)
 	}
-	defer conn.Close()
+	defer func() {
+		err := conn.Close()
+		if err != nil {
+			log.Printf("could not close connection: %v", err)
+		}
+	}()
 
 	session, err := conn.NewSession()
 	if err != nil {
 		return fmt.Errorf("cannot open new session: %v", err)
 	}
-	defer session.Close()
+	defer func() {
+		err := session.Close()
+		if err != nil {
+			log.Printf("could not close session: %v", err)
+		}
+	}()
 
 	if connection.accessConfig.GetSshAgentForwarding() {
 		if err := agent.ForwardToRemote(conn, os.Getenv("SSH_AUTH_SOCK")); err != nil {
@@ -87,7 +97,10 @@ func (connection *SSHConnection) runShell(ctx context.Context) error {
 
 	go func() {
 		<-ctx.Done()
-		conn.Close()
+		err := conn.Close()
+		if err != nil {
+			log.Printf("could not close connection: %v", err)
+		}
 	}()
 
 	fd := int(os.Stdin.Fd())

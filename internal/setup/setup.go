@@ -96,7 +96,12 @@ func createInventory(inventoryDestination string) error {
 	if err != nil {
 		return fmt.Errorf("could not create inventory file")
 	}
-	defer file.Close()
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			fmt.Println("could not close inventory file")
+		}
+	}()
 
 	err = vault.EncryptFile(inventoryDestination, string(content), secret.GetSecretFromKeyring())
 	if err != nil {

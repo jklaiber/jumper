@@ -23,8 +23,16 @@ func EditInventory(filePath string) error {
 	if err != nil {
 		return fmt.Errorf("temporary file creation failed: %v", err)
 	}
-	defer tempFile.Close()
-	defer os.Remove(tempFile.Name())
+	defer func() {
+		err := tempFile.Close()
+		if err != nil {
+			fmt.Printf("Error closing temporary file: %v", err)
+		}
+		err = os.Remove(tempFile.Name())
+		if err != nil {
+			fmt.Printf("Error removing temporary file: %v", err)
+		}
+	}()
 
 	if err := os.WriteFile(tempFile.Name(), []byte(decryptedContents), 0644); err != nil {
 		return fmt.Errorf("writing to temporary file failed: %v", err)

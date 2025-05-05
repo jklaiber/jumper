@@ -8,7 +8,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	github.com/zalando/go-keyring v0.2.6
-	go.uber.org/mock v0.5.1
+	go.uber.org/mock v0.5.2
 	golang.org/x/crypto v0.37.0
 	golang.org/x/term v0.31.0
 	gopkg.in/yaml.v2 v2.4.0

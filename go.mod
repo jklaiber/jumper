@@ -10,7 +10,7 @@ require (
 	github.com/zalando/go-keyring v0.2.6
 	go.uber.org/mock v0.5.2
 	golang.org/x/crypto v0.37.0
-	golang.org/x/term v0.31.0
+	golang.org/x/term v0.32.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -30,7 +30,7 @@ require (
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
